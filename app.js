@@ -147,7 +147,7 @@ async function loadData(forceRefresh = false) {
         updateStats();
         renderGrid();
         
-        if (forceRefresh) showToast('Sync Complete: Normalized all test records.');
+        if (forceRefresh) showToast('Sync Complete: Restored and organized all cases.');
     } catch (error) {
         console.error('Data Sync Error:', error);
         showToast('Connection failed. Please check Apps Script deployment.', 'error');
@@ -173,8 +173,8 @@ async function fetchFromSyncSource() {
     }
 }
 
-function normalizeTestName(name) {
-    if (!name) return 'Unknown Test';
+function getTestCategory(name) {
+    if (!name) return 'Other';
     const n = name.toString().toUpperCase().trim();
     
     if (n.includes('WES') || n.includes('EXOME') || n.includes('SEQUENCING')) return 'WES';
@@ -184,10 +184,11 @@ function normalizeTestName(name) {
     if (n.includes('NGS') || n.includes('PANEL') || n.includes('FOCUS')) return 'GENE PANEL';
     if (n.includes('QF') || n.includes('PCR')) return 'QF-PCR';
     if (n.includes('SANGER')) return 'SANGER';
+    if (n.includes('MLPA')) return 'MLPA';
     if (n.includes('FRAGILE')) return 'FRAGILE X';
     if (n.includes('SMA')) return 'SMA';
     
-    return name.toString().split(' ')[0].substring(0, 20); // Fallback to first word
+    return 'Other';
 }
 
 function normalizeData(data) {
@@ -195,8 +196,8 @@ function normalizeData(data) {
     return data.filter(row => row && (row['Sample Name'] || row['Anderson ID'] || row['SAMPLE NAME'] || row['ANDERSON ID'])).map(row => {
         const sampleName = row['Sample Name'] || row['SAMPLE NAME'] || 'N/A';
         const andersonId = row['Anderson ID'] || row['ANDERSON ID'] || 'N/A';
-        const rawTestName = row['Test Name'] || row['TEST NAME'] || 'Unknown Test';
-        const testName = normalizeTestName(rawTestName);
+        const testName = row['Test Name'] || row['TEST NAME'] || 'Unknown Test';
+        const testCategory = getTestCategory(testName);
         const client = row['Client'] || row['Client '] || row['CLIENT'] || '-';
         const history = row['Clinical History writeup'] || row['CLINICAL HISTORY WRITEUP'] || '';
         const month = row['Month'] || 'Active';
@@ -205,7 +206,7 @@ function normalizeData(data) {
         const hasHistory = trfReport && trfReport.toString().trim().length > 0 && trfReport.toString().toLowerCase() !== 'nan';
 
         return {
-            sampleName, andersonId, testName, rawTestName, client, history, trfReport, month, remark, hasHistory
+            sampleName, andersonId, testName, testCategory, client, history, trfReport, month, remark, hasHistory
         };
     });
 }
@@ -248,13 +249,14 @@ function selectMonth(m, el) {
 }
 
 function populateFilters() {
-    const tests = [...new Set(state.data.map(item => item.testName))].filter(Boolean).sort();
+    // We now filter by Category OR specific test name if they want, but let's stick to Categories for a cleaner list
+    const categories = [...new Set(state.data.map(item => item.testCategory))].filter(Boolean).sort();
     const tSelect = document.getElementById('test-filter');
 
     if (tSelect) {
         const current = tSelect.value;
-        tSelect.innerHTML = '<option value="all">Filter by Test Category</option>';
-        tests.forEach(t => { tSelect.innerHTML += `<option value="${t}">${t}</option>`; });
+        tSelect.innerHTML = '<option value="all">All Test Categories</option>';
+        categories.forEach(c => { tSelect.innerHTML += `<option value="${c}">${c}</option>`; });
         tSelect.value = current || 'all';
     }
 }
@@ -300,7 +302,7 @@ function applyFilters() {
             item.client.toLowerCase().includes(query);
         
         const matchesMonth = state.filters.month === 'all' || item.month === state.filters.month;
-        const matchesTest = state.filters.test === 'all' || item.testName === state.filters.test;
+        const matchesTest = state.filters.test === 'all' || item.testCategory === state.filters.test;
         
         let matchesStatus = true;
         if (state.filters.status === 'available') matchesStatus = item.hasHistory;
@@ -345,7 +347,12 @@ function renderGrid() {
                 </div>
             </td>
             <td><code class="token-id">${item.andersonId}</code></td>
-            <td><span class="type-badge">${item.testName}</span></td>
+            <td>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <span class="type-badge">${item.testCategory}</span>
+                    <span style="font-size:11px; color:var(--text-dim); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.testName}</span>
+                </div>
+            </td>
             <td style="font-weight:600; font-size:12px;">${item.month}</td>
             <td>
                 <div class="status-dot-badge">
@@ -406,7 +413,7 @@ function openSidePanel(index) {
     
     document.getElementById('d-name').textContent = item.sampleName;
     document.getElementById('d-id').textContent = item.andersonId;
-    document.getElementById('d-test').textContent = item.rawTestName || item.testName; // Show raw test name here
+    document.getElementById('d-test').textContent = item.testName; // Show FULL name here
     document.getElementById('d-month').textContent = item.month;
     document.getElementById('d-client').textContent = item.client;
     document.getElementById('d-trf').textContent = item.trfReport || 'No TRF information found.';
