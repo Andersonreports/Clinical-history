@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clinical History Tracker | Anderson Reports</title>
-    <link rel="stylesheet" href="style.css?v=1.6">
+    <link rel="stylesheet" href="style.css?v=1.7">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -12,6 +12,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
 </head>
 <body class="modern-os">
+    <!-- Top Center Title -->
+    <div class="top-page-banner">
+        <h1>Clinical History Tracker</h1>
+    </div>
+
     <div class="app-shell">
         <!-- Main Content (Left) -->
         <main class="app-main">
@@ -24,7 +29,7 @@
                 <div class="header-user">
                     <button id="sync-btn" class="btn-sync-pro">
                         <i data-lucide="refresh-cw"></i>
-                        <span>Refresh Data</span>
+                        <span id="sync-text">Refresh Data</span>
                     </button>
                 </div>
             </header>
@@ -163,6 +168,6 @@
     </div>
 
     <div id="toast" class="toast"></div>
-    <script src="app.js?v=1.6"></script>
+    <script src="app.js?v=1.7"></script>
 </body>
 </html>
