@@ -47,7 +47,7 @@ function initEventListeners() {
 
     // Sidebar All Records Button
     const sidebarAll = document.getElementById('sidebar-all-records');
-    if (sidebarAll) sidebarAll.onclick = () => selectMonth('all', sidebarAll);
+    if (sidebarAll) sidebarAll.onclick = () => restoreAllRecords();
 
     // Interactive Dashboard Cards (Primary Status Filters)
     const btnTotal = document.getElementById('btn-stat-total');
@@ -254,12 +254,14 @@ function normalizeData(data) {
         const client = row['Client'] || row['Client '] || row['CLIENT'] || '-';
         const history = row['Clinical History writeup'] || row['CLINICAL HISTORY WRITEUP'] || '';
         const month = normalizeMonth(row['Month']);
+        const receivedDate = row['Received Date'] || row['RECEIVED DATE'] || row['Recieved date'] || row['Recieved Date'] || '-';
+        const tatDate = row['TAT Date'] || row['TAT DATE'] || row['TAT date'] || '-';
         const remark = row['Remark'] || row['REMARK'] || '';
         const trfReport = row['TRF AND REPORTS'] || row['TRF AND REPORT'] || row['TRF and Reports'] || '';
         const hasHistory = trfReport && trfReport.toString().trim().length > 0 && trfReport.toString().toLowerCase() !== 'nan';
 
         return {
-            sampleName, andersonId, testName, testCategory, client, history, trfReport, month, remark, hasHistory
+            sampleName, andersonId, testName, testCategory, client, history, trfReport, month, remark, hasHistory, receivedDate, tatDate
         };
     });
 }
@@ -370,7 +372,7 @@ function renderGrid() {
     const end = Math.min(start + state.itemsPerPage, state.filteredData.length);
     const pageData = state.filteredData.slice(start, end);
     if (pageData.length === 0) {
-        body.innerHTML = `<tr><td colspan="6" style="padding: 100px; text-align:center; color: var(--text-dim);">
+        body.innerHTML = `<tr><td colspan="7" style="padding: 100px; text-align:center; color: var(--text-dim);">
             <i data-lucide="inbox" style="width:40px; height:40px; opacity:0.1; margin-bottom:10px;"></i>
             <p style="font-weight:600;">No cases found in this view</p>
         </td></tr>`;
@@ -396,7 +398,8 @@ function renderGrid() {
                     <span style="font-size:11px; color:var(--text-dim); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.testName}</span>
                 </div>
             </td>
-            <td style="font-weight:600; font-size:12px;">${item.month}</td>
+            <td style="font-weight:600; font-size:12px;">${item.receivedDate}</td>
+            <td style="font-weight:600; font-size:12px;">${item.tatDate}</td>
             <td>
                 <div class="status-dot-badge">
                     <div class="dot ${item.hasHistory ? 'ok' : 'missing'}"></div>
@@ -449,6 +452,10 @@ function openSidePanel(index) {
     document.getElementById('d-id').textContent = item.andersonId;
     document.getElementById('d-test').textContent = item.testName;
     document.getElementById('d-month').textContent = item.month;
+    const dRec = document.getElementById('d-received');
+    if (dRec) dRec.textContent = item.receivedDate;
+    const dTat = document.getElementById('d-tat');
+    if (dTat) dTat.textContent = item.tatDate;
     document.getElementById('d-client').textContent = item.client;
     document.getElementById('d-trf').textContent = item.trfReport || 'No TRF information found.';
     document.getElementById('d-history').textContent = item.history || 'NO CLINICAL WRITEUP PROVIDED';
