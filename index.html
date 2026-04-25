@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clinical History Tracker | Anderson Reports</title>
-    <link rel="stylesheet" href="style.css?v=1.5">
+    <link rel="stylesheet" href="style.css?v=1.6">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -19,7 +19,7 @@
             <header class="global-header">
                 <div class="header-search">
                     <i data-lucide="search"></i>
-                    <input type="text" id="main-search" placeholder="Search patients, IDs, or cases...">
+                    <input type="text" id="main-search" placeholder="Search patient, ID, or clinical details...">
                 </div>
                 <div class="header-user">
                     <button id="sync-btn" class="btn-sync-pro">
@@ -34,7 +34,7 @@
                 <div class="pro-card card-total" id="btn-stat-total">
                     <div class="card-icon-mini"><i data-lucide="database"></i></div>
                     <div class="card-body">
-                        <p>Total Cases</p>
+                        <p>Total Records</p>
                         <h2 id="stat-total">0</h2>
                     </div>
                 </div>
@@ -73,7 +73,7 @@
                         <thead>
                             <tr>
                                 <th>Patient Identity</th>
-                                <th>Tracking ID</th>
+                                <th>Anderson ID</th>
                                 <th>Test Information</th>
                                 <th>Month</th>
                                 <th>Clinical Status</th>
@@ -93,7 +93,7 @@
             </div>
         </main>
 
-        <!-- Sidebar Navigation (Now on Right) -->
+        <!-- Sidebar Navigation (Right) -->
         <aside class="app-sidebar right-aligned">
             <div class="sidebar-brand">
                 <i data-lucide="dna"></i>
@@ -110,9 +110,9 @@
             <div class="panel-blur"></div>
             <div class="panel-content">
                 <header class="panel-header">
-                    <button id="close-panel" class="btn-back"><i data-lucide="arrow-left"></i> <span>Close</span></button>
+                    <button id="close-panel" class="btn-back"><i data-lucide="arrow-left"></i> <span>Close Panel</span></button>
                     <div class="panel-actions">
-                        <button id="copy-btn" class="btn-action-pro"><i data-lucide="copy"></i> Copy</button>
+                        <button id="copy-btn" class="btn-action-pro"><i data-lucide="copy"></i> Copy Writeup</button>
                     </div>
                 </header>
 
@@ -125,30 +125,36 @@
                         </div>
                     </section>
 
-                    <section class="case-grid">
-                        <div class="case-box">
-                            <label>Test Information</label>
-                            <p id="d-test">-</p>
+                    <section class="case-details-enhanced">
+                        <div class="detail-row">
+                            <div class="detail-item">
+                                <label><i data-lucide="microscope"></i> Test Information</label>
+                                <p id="d-test">-</p>
+                            </div>
                         </div>
-                        <div class="case-box">
-                            <label>Client Reference</label>
-                            <p id="d-client">-</p>
+                        <div class="detail-row">
+                            <div class="detail-item">
+                                <label><i data-lucide="building"></i> Client Reference</label>
+                                <p id="d-client">-</p>
+                            </div>
                         </div>
-                    </section>
+                        
+                        <div class="detail-row-special trf-section">
+                            <label><i data-lucide="file-text"></i> TRF & Reporting Status</label>
+                            <div id="d-trf" class="trf-content-box">-</div>
+                        </div>
 
-                    <section class="case-section trf-box-pro">
-                        <label><i data-lucide="file-digit"></i> TRF & Reporting Status</label>
-                        <div id="d-trf" class="trf-text">-</div>
-                    </section>
+                        <div class="detail-row-special history-section">
+                            <div class="label-with-action">
+                                <label><i data-lucide="align-left"></i> Clinical History Writeup</label>
+                            </div>
+                            <div id="d-history" class="history-content-box">-</div>
+                        </div>
 
-                    <section class="case-section writeup-box-pro">
-                        <label><i data-lucide="text-quote"></i> Clinical History Writeup</label>
-                        <div id="d-history" class="history-text">-</div>
-                    </section>
-
-                    <section class="case-section">
-                        <label><i data-lucide="message-square"></i> Registry Remarks</label>
-                        <p id="d-remark" class="remark-text">-</p>
+                        <div class="detail-row-special remarks-section">
+                            <label><i data-lucide="message-circle"></i> Registry Remarks</label>
+                            <p id="d-remark" class="remark-content">-</p>
+                        </div>
                     </section>
                 </div>
             </div>
@@ -157,6 +163,6 @@
     </div>
 
     <div id="toast" class="toast"></div>
-    <script src="app.js?v=1.5"></script>
+    <script src="app.js?v=1.6"></script>
 </body>
 </html>
