@@ -1,4 +1,4 @@
-// Clinical History Tracker - Grid Workspace Logic
+// Clinical History Tracker - Clinical OS Logic
 
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbxXXafajUy5_1komoDIFidxrLuehfHVUUTZRlZnfeeTEI68GElYdvJGOvVI16gLPmhmZg/exec';
 const LOCAL_DATA_PATH = 'data.json';
@@ -28,49 +28,47 @@ function initEventListeners() {
     const searchInput = document.getElementById('main-search');
     if (searchInput) searchInput.addEventListener('input', handleSearch);
     
-    const monthFilter = document.getElementById('month-filter');
-    if (monthFilter) monthFilter.addEventListener('change', handleFilterChange);
-    
     const testFilter = document.getElementById('test-filter');
     if (testFilter) testFilter.addEventListener('change', handleFilterChange);
 
-    const statusFilter = document.getElementById('status-filter');
-    if (statusFilter) statusFilter.addEventListener('change', handleFilterChange);
-    
     const syncBtn = document.getElementById('sync-btn');
     if (syncBtn) syncBtn.addEventListener('click', syncData);
-
-    const clearBtn = document.getElementById('clear-filters');
-    if (clearBtn) clearBtn.addEventListener('click', () => {
-        resetFilters();
-        applyFilters();
-    });
 
     const closePanel = document.getElementById('close-panel');
     const overlay = document.getElementById('panel-overlay');
     if (closePanel) closePanel.onclick = closeSidePanel;
     if (overlay) overlay.onclick = closeSidePanel;
     
-    // Interactive Stats (Large Cards)
-    const btnTotal = document.getElementById('btn-stat-total');
-    const btnComplete = document.getElementById('btn-stat-complete');
-    const btnPending = document.getElementById('btn-stat-pending');
+    // Pill Filters
+    document.querySelectorAll('.pill').forEach(pill => {
+        pill.onclick = () => {
+            document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            state.filters.status = pill.dataset.filter;
+            state.currentPage = 1;
+            applyFilters();
+        };
+    });
 
-    if (btnTotal) btnTotal.onclick = () => { resetFilters(); applyFilters(); };
-    if (btnComplete) btnComplete.onclick = () => {
-        resetFilters();
+    // Bento Card Interactions
+    document.getElementById('btn-stat-total').onclick = () => {
+        resetUIFilters();
+        applyFilters();
+    };
+    document.getElementById('btn-stat-complete').onclick = () => {
+        resetUIFilters();
         state.filters.status = 'available';
-        document.getElementById('status-filter').value = 'available';
+        document.querySelector('.pill[data-filter="available"]').classList.add('active');
         applyFilters();
     };
-    if (btnPending) btnPending.onclick = () => {
-        resetFilters();
+    document.getElementById('btn-stat-pending').onclick = () => {
+        resetUIFilters();
         state.filters.status = 'needed';
-        document.getElementById('status-filter').value = 'needed';
+        document.querySelector('.pill[data-filter="needed"]').classList.add('active');
         applyFilters();
     };
 
-    // Global Shortcut
+    // Global Shortcuts
     document.addEventListener('keydown', (e) => {
         if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
             e.preventDefault();
@@ -88,13 +86,13 @@ function initEventListeners() {
                 const text = historyEl.innerText;
                 navigator.clipboard.writeText(text).then(() => {
                     const originalHTML = copyBtn.innerHTML;
-                    copyBtn.innerHTML = '<i data-lucide="check"></i><span>Copied!</span>';
-                    copyBtn.classList.add('btn-success-anim');
-                    showToast('History copied to clipboard');
+                    copyBtn.innerHTML = '<i data-lucide="check"></i> <span>Copied!</span>';
+                    copyBtn.style.background = 'var(--success)';
+                    showToast('Clinical writeup copied to clipboard');
                     if (typeof lucide !== 'undefined') lucide.createIcons();
                     setTimeout(() => {
                         copyBtn.innerHTML = originalHTML;
-                        copyBtn.classList.remove('btn-success-anim');
+                        copyBtn.style.background = 'var(--primary)';
                         if (typeof lucide !== 'undefined') lucide.createIcons();
                     }, 2000);
                 });
@@ -103,13 +101,15 @@ function initEventListeners() {
     }
 }
 
-function resetFilters() {
+function resetUIFilters() {
     state.filters = { month: 'all', test: 'all', status: 'all' };
     state.searchQuery = '';
-    document.getElementById('month-filter').value = 'all';
-    document.getElementById('test-filter').value = 'all';
-    document.getElementById('status-filter').value = 'all';
     document.getElementById('main-search').value = '';
+    document.getElementById('test-filter').value = 'all';
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    document.querySelector('.pill[data-filter="all"]').classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelector('.nav-item[data-month="all"]').classList.add('active');
 }
 
 async function loadData(forceRefresh = false) {
@@ -135,14 +135,15 @@ async function loadData(forceRefresh = false) {
         state.data = normalizeData(rawData);
         state.filteredData = [...state.data];
         
+        populateSidebar();
         populateFilters();
         updateStats();
         renderGrid();
         
-        if (forceRefresh) showToast('Grid data synchronized across all sheets');
+        if (forceRefresh) showToast('Sync Complete: Fetched all monthly records.');
     } catch (error) {
         console.error('Data Sync Error:', error);
-        showToast('Sync failed. Please check Apps Script deployment.', 'error');
+        showToast('Connection failed. Please check Apps Script deployment.', 'error');
     } finally {
         showLoading(false);
     }
@@ -184,23 +185,50 @@ function normalizeData(data) {
     });
 }
 
-function populateFilters() {
+function populateSidebar() {
+    const nav = document.getElementById('sidebar-months');
+    if (!nav) return;
+    
     const months = [...new Set(state.data.map(item => item.month))].filter(Boolean).sort((a, b) => b.localeCompare(a));
+    
+    nav.innerHTML = '<div class="nav-label">Global View</div>';
+    
+    const allItem = document.createElement('div');
+    allItem.className = 'nav-item active';
+    allItem.dataset.month = 'all';
+    allItem.innerHTML = '<i data-lucide="globe"></i> <span>All Records</span>';
+    allItem.onclick = () => selectMonth('all', allItem);
+    nav.appendChild(allItem);
+    
+    nav.innerHTML += '<div class="nav-label">By Month</div>';
+    
+    months.forEach(m => {
+        const item = document.createElement('div');
+        item.className = 'nav-item';
+        item.dataset.month = m;
+        item.innerHTML = `<i data-lucide="calendar"></i> <span>${m}</span>`;
+        item.onclick = () => selectMonth(m, item);
+        nav.appendChild(item);
+    });
+    
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function selectMonth(m, el) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+    state.filters.month = m;
+    state.currentPage = 1;
+    applyFilters();
+}
+
+function populateFilters() {
     const tests = [...new Set(state.data.map(item => item.testName))].filter(Boolean).sort();
-
-    const mSelect = document.getElementById('month-filter');
     const tSelect = document.getElementById('test-filter');
-
-    if (mSelect) {
-        const current = mSelect.value;
-        mSelect.innerHTML = '<option value="all">All Months</option>';
-        months.forEach(m => { mSelect.innerHTML += `<option value="${m}">${m}</option>`; });
-        mSelect.value = current || 'all';
-    }
 
     if (tSelect) {
         const current = tSelect.value;
-        tSelect.innerHTML = '<option value="all">All Tests</option>';
+        tSelect.innerHTML = '<option value="all">Filter by Test Category</option>';
         tests.forEach(t => { tSelect.innerHTML += `<option value="${t}">${t.substring(0, 30)}</option>`; });
         tSelect.value = current || 'all';
     }
@@ -209,10 +237,17 @@ function populateFilters() {
 function updateStats() {
     const total = state.data.length;
     const complete = state.data.filter(i => i.hasHistory).length;
+    const pending = total - complete;
     
     document.getElementById('stat-total').textContent = total.toLocaleString();
     document.getElementById('stat-complete').textContent = complete.toLocaleString();
-    document.getElementById('stat-pending').textContent = (total - complete).toLocaleString();
+    document.getElementById('stat-pending').textContent = pending.toLocaleString();
+    
+    const completePercent = total > 0 ? (complete / total) * 100 : 0;
+    const pendingPercent = total > 0 ? (pending / total) * 100 : 0;
+    
+    document.getElementById('stat-complete-bar').style.width = `${completePercent}%`;
+    document.getElementById('stat-pending-bar').style.width = `${pendingPercent}%`;
 }
 
 function handleSearch(e) {
@@ -222,9 +257,7 @@ function handleSearch(e) {
 }
 
 function handleFilterChange() {
-    state.filters.month = document.getElementById('month-filter').value;
     state.filters.test = document.getElementById('test-filter').value;
-    state.filters.status = document.getElementById('status-filter').value;
     state.currentPage = 1;
     applyFilters();
 }
@@ -262,7 +295,10 @@ function renderGrid() {
     const pageData = state.filteredData.slice(start, end);
 
     if (pageData.length === 0) {
-        body.innerHTML = '<tr><td colspan="6" style="padding: 80px; text-align:center; color: var(--text-muted);"><i data-lucide="search-x" style="width:48px; height:48px; display:block; margin:0 auto 10px; opacity:0.3;"></i>No matching records found</td></tr>';
+        body.innerHTML = `<tr><td colspan="6" style="padding: 100px; text-align:center; color: var(--text-dim);">
+            <i data-lucide="inbox" style="width:48px; height:48px; opacity:0.1; margin-bottom:15px;"></i>
+            <p style="font-weight:600;">No cases found in this view</p>
+        </td></tr>`;
         if (typeof lucide !== 'undefined') lucide.createIcons();
         renderPagination(0);
         return;
@@ -271,33 +307,32 @@ function renderGrid() {
     pageData.forEach((item, index) => {
         const absoluteIndex = start + index;
         const tr = document.createElement('tr');
-        tr.className = state.selectedIndex === absoluteIndex ? 'active-row' : '';
         tr.onclick = () => openSidePanel(absoluteIndex);
         
         tr.innerHTML = `
             <td>
-                <div class="patient-name-cell">
+                <div class="identity-cell">
                     <span class="name">${item.sampleName}</span>
-                    <span class="client-mini">${item.client.substring(0, 50)}</span>
+                    <span class="sub">${item.client.substring(0, 50)}</span>
                 </div>
             </td>
-            <td><code class="grid-id">${item.andersonId}</code></td>
-            <td><span class="test-badge">${item.testName}</span></td>
-            <td>${item.month}</td>
+            <td><code class="token-id">${item.andersonId}</code></td>
+            <td><span class="type-badge">${item.testName}</span></td>
+            <td style="font-weight:600; font-size:12px;">${item.month}</td>
             <td>
-                <span class="status-badge ${item.hasHistory ? 'available' : 'missing'}">
-                    <i data-lucide="${item.hasHistory ? 'check' : 'alert-circle'}"></i>
-                    ${item.hasHistory ? 'History OK' : 'Missing'}
-                </span>
+                <div class="status-dot-badge">
+                    <div class="dot ${item.hasHistory ? 'ok' : 'missing'}"></div>
+                    <span>${item.hasHistory ? 'Completed' : 'Action Required'}</span>
+                </div>
             </td>
-            <td>
-                <button class="btn-icon-view"><i data-lucide="chevron-right"></i></button>
+            <td style="text-align:right;">
+                <button class="btn-sync-pro" style="padding: 5px 12px; box-shadow:none; border:1px solid var(--border); font-size:11px;">DETAILS</button>
             </td>
         `;
         body.appendChild(tr);
     });
 
-    document.getElementById('pagination-info').textContent = `Showing ${start + 1}-${end} of ${state.filteredData.length}`;
+    document.getElementById('pagination-info').textContent = `Displaying ${start + 1}-${end} of ${state.filteredData.length} records`;
     renderPagination(state.filteredData.length);
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
@@ -336,7 +371,6 @@ function renderPagination(totalItems) {
 }
 
 function openSidePanel(index) {
-    state.selectedIndex = index;
     const item = state.filteredData[index];
     if (!item) return;
     
@@ -345,35 +379,27 @@ function openSidePanel(index) {
     document.getElementById('d-test').textContent = item.testName;
     document.getElementById('d-month').textContent = item.month;
     document.getElementById('d-client').textContent = item.client;
-    document.getElementById('d-trf').textContent = item.trfReport || 'No TRF information available.';
-    document.getElementById('d-history').textContent = item.history || 'NO CLINICAL WRITEUP AVAILABLE';
-    document.getElementById('d-remark').textContent = item.remark || 'N/A';
+    document.getElementById('d-trf').textContent = item.trfReport || 'No TRF information found.';
+    document.getElementById('d-history').textContent = item.history || 'NO CLINICAL WRITEUP PROVIDED';
+    document.getElementById('d-remark').textContent = item.remark || 'No specific registry remarks.';
     
-    const pill = document.getElementById('d-status-pill');
-    pill.textContent = item.hasHistory ? 'History OK' : 'Missing';
-    pill.className = `badge-status ${item.hasHistory ? 'available' : 'missing'}`;
-
     document.getElementById('side-panel').classList.add('open');
     document.getElementById('panel-overlay').classList.add('active');
-    
-    renderGrid();
 }
 
 function closeSidePanel() {
-    state.selectedIndex = -1;
     document.getElementById('side-panel').classList.remove('open');
     document.getElementById('panel-overlay').classList.remove('active');
-    renderGrid();
 }
 
 function showLoading(show) {
     const btn = document.getElementById('sync-btn');
     if (btn) {
         if (show) {
-            btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i><span>Syncing...</span>';
+            btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> <span>Syncing...</span>';
             btn.disabled = true;
         } else {
-            btn.innerHTML = '<i data-lucide="refresh-cw"></i><span>Sync Live Data</span>';
+            btn.innerHTML = '<i data-lucide="refresh-cw"></i> <span>Refresh Live Data</span>';
             btn.disabled = false;
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
@@ -384,7 +410,7 @@ function showToast(message, type = 'info') {
     const toast = document.getElementById('toast');
     if (toast) {
         toast.textContent = message;
-        toast.style.borderLeft = `4px solid ${type === 'error' ? '#ef4444' : '#10b981'}`;
+        toast.style.borderLeft = `5px solid ${type === 'error' ? 'var(--danger)' : 'var(--success)'}`;
         toast.classList.add('show');
         setTimeout(() => toast.classList.remove('show'), 3000);
     }

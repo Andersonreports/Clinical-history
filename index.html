@@ -4,170 +4,159 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clinical History Tracker | Anderson Reports</title>
-    <link rel="stylesheet" href="style.css?v=1.3">
+    <link rel="stylesheet" href="style.css?v=1.4">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
 </head>
-<body class="grid-workspace">
-    <div class="app-container">
-        <!-- Dashboard Header -->
-        <header class="app-header">
-            <div class="header-main">
-                <div class="brand">
-                    <i data-lucide="activity" class="brand-icon"></i>
-                    <div class="brand-text">
-                        <h1>Clinical History Tracker</h1>
-                        <span>Laboratory Operations Dashboard</span>
-                    </div>
+<body class="modern-os">
+    <div class="app-shell">
+        <!-- Sidebar Navigation (Months) -->
+        <aside class="app-sidebar">
+            <div class="sidebar-brand">
+                <i data-lucide="dna"></i>
+                <span>Clinical OS</span>
+            </div>
+            <nav class="month-nav" id="sidebar-months">
+                <div class="nav-label">Time Period</div>
+                <!-- Month links injected here -->
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="app-main">
+            <!-- Global Header -->
+            <header class="global-header">
+                <div class="header-search">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="main-search" placeholder="Quick find patient, ID, or case details...">
                 </div>
-                <div class="header-actions">
-                    <button id="sync-btn" class="btn-sync">
+                <div class="header-user">
+                    <button id="sync-btn" class="btn-sync-pro">
                         <i data-lucide="refresh-cw"></i>
-                        <span>Sync Live Data</span>
+                        <span>Refresh Live Data</span>
                     </button>
                 </div>
-            </div>
+            </header>
 
-            <!-- Enlarged Count Buttons -->
-            <div class="dashboard-stats">
-                <div class="stat-card total" id="btn-stat-total">
-                    <div class="stat-icon"><i data-lucide="layers"></i></div>
-                    <div class="stat-info">
-                        <span class="stat-val" id="stat-total">0</span>
-                        <span class="stat-label">Total Records</span>
+            <!-- Pro Dashboard Stats -->
+            <section class="dashboard-grid">
+                <div class="pro-card card-total" id="btn-stat-total">
+                    <div class="card-icon"><i data-lucide="database"></i></div>
+                    <div class="card-body">
+                        <h2 id="stat-total">0</h2>
+                        <p>Total Cases Tracked</p>
+                    </div>
+                    <div class="card-visual"><div class="visual-bar" style="width: 100%;"></div></div>
+                </div>
+                <div class="pro-card card-success" id="btn-stat-complete">
+                    <div class="card-icon"><i data-lucide="file-check-2"></i></div>
+                    <div class="card-body">
+                        <h2 id="stat-complete">0</h2>
+                        <p>History Available</p>
+                    </div>
+                    <div class="card-visual"><div class="visual-bar" id="stat-complete-bar" style="width: 0%;"></div></div>
+                </div>
+                <div class="pro-card card-danger" id="btn-stat-pending">
+                    <div class="card-icon"><i data-lucide="clipboard-list"></i></div>
+                    <div class="card-body">
+                        <h2 id="stat-pending">0</h2>
+                        <p>History Required</p>
+                    </div>
+                    <div class="card-visual"><div class="visual-bar danger" id="stat-pending-bar" style="width: 0%;"></div></div>
+                </div>
+            </section>
+
+            <!-- Control Bar -->
+            <div class="control-bar">
+                <div class="control-left">
+                    <div class="pill-filters">
+                        <button class="pill active" data-filter="all">All Cases</button>
+                        <button class="pill" data-filter="needed">Needs History</button>
+                        <button class="pill" data-filter="available">Completed</button>
                     </div>
                 </div>
-                <div class="stat-card success" id="btn-stat-complete">
-                    <div class="stat-icon"><i data-lucide="check-square"></i></div>
-                    <div class="stat-info">
-                        <span class="stat-val" id="stat-complete">0</span>
-                        <span class="stat-label">History Available</span>
-                    </div>
-                </div>
-                <div class="stat-card danger" id="btn-stat-pending">
-                    <div class="stat-icon"><i data-lucide="alert-triangle"></i></div>
-                    <div class="stat-info">
-                        <span class="stat-val" id="stat-pending">0</span>
-                        <span class="stat-label">History Missing</span>
-                    </div>
+                <div class="control-right">
+                    <select id="test-filter" class="select-pro">
+                        <option value="all">Filter by Test Category</option>
+                    </select>
                 </div>
             </div>
-        </header>
 
-        <!-- Filter Toolbar -->
-        <section class="toolbar">
-            <div class="toolbar-search">
-                <i data-lucide="search"></i>
-                <input type="text" id="main-search" placeholder="Search patient name, ID, or client...">
-            </div>
-            <div class="toolbar-filters">
-                <div class="filter-item">
-                    <label>Month</label>
-                    <select id="month-filter">
-                        <option value="all">All Months</option>
-                    </select>
+            <!-- Data Surface -->
+            <div class="data-surface">
+                <div class="surface-table-container">
+                    <table class="pro-table">
+                        <thead>
+                            <tr>
+                                <th>Patient Identity</th>
+                                <th>Tracking ID</th>
+                                <th>Test Type</th>
+                                <th>Month</th>
+                                <th>Clinical Status</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="grid-body">
+                            <!-- Rows injected here -->
+                        </tbody>
+                    </table>
                 </div>
-                <div class="filter-item">
-                    <label>Test Type</label>
-                    <select id="test-filter">
-                        <option value="all">All Tests</option>
-                    </select>
+                
+                <div class="surface-footer">
+                    <span id="pagination-info">Showing 0 of 0 cases</span>
+                    <div id="pagination" class="pagination-pro"></div>
                 </div>
-                <div class="filter-item">
-                    <label>Status</label>
-                    <select id="status-filter">
-                        <option value="all">All Status</option>
-                        <option value="needed">History Missing</option>
-                        <option value="available">History Available</option>
-                    </select>
-                </div>
-                <button id="clear-filters" class="btn-ghost" title="Clear All Filters">
-                    <i data-lucide="filter-x"></i>
-                </button>
-            </div>
-        </section>
-
-        <!-- Main Grid Area -->
-        <main class="grid-container">
-            <div class="grid-wrapper">
-                <table id="main-grid">
-                    <thead>
-                        <tr>
-                            <th class="col-name">Patient Details</th>
-                            <th class="col-id">Anderson ID</th>
-                            <th class="col-test">Test Category</th>
-                            <th class="col-month">Month</th>
-                            <th class="col-status">Clinical Status</th>
-                            <th class="col-action">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="grid-body">
-                        <!-- Rows -->
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="grid-footer">
-                <div id="pagination-info" class="pg-info">Showing 0-0 of 0</div>
-                <div id="pagination" class="pg-controls"></div>
             </div>
         </main>
 
-        <!-- Slide Panel -->
-        <div id="side-panel" class="side-panel">
-            <div class="panel-header">
-                <div class="panel-title">
-                    <i data-lucide="file-text"></i>
-                    <h2>Case Examination</h2>
-                </div>
-                <button id="close-panel" class="btn-close"><i data-lucide="x"></i></button>
-            </div>
+        <!-- Professional Case Panel -->
+        <div id="side-panel" class="pro-panel">
+            <div class="panel-blur"></div>
             <div class="panel-content">
-                <div class="p-section patient-header">
-                    <h3 id="d-name">Patient Name</h3>
-                    <div class="p-badges">
-                        <span id="d-id" class="badge-id">AND000</span>
-                        <span id="d-status-pill" class="badge-status">Status</span>
+                <header class="panel-header">
+                    <button id="close-panel" class="btn-back"><i data-lucide="arrow-left"></i> <span>Back to List</span></button>
+                    <div class="panel-actions">
+                        <button id="copy-btn" class="btn-action-pro"><i data-lucide="copy"></i> Copy Writeup</button>
                     </div>
-                </div>
+                </header>
 
-                <div class="p-section info-grid">
-                    <div class="info-box">
-                        <label>Test Method</label>
-                        <p id="d-test">-</p>
-                    </div>
-                    <div class="info-box">
-                        <label>Registry Month</label>
-                        <p id="d-month">-</p>
-                    </div>
-                    <div class="info-box full">
-                        <label>Referring Client</label>
-                        <p id="d-client">-</p>
-                    </div>
-                </div>
+                <div class="panel-body">
+                    <section class="case-header">
+                        <h2 id="d-name">Patient Name</h2>
+                        <div class="case-meta">
+                            <span id="d-id" class="id-token">AND000</span>
+                            <span id="d-month" class="month-token">JUL 2025</span>
+                        </div>
+                    </section>
 
-                <div class="p-section trf-box">
-                    <label>TRF / Reporting Context</label>
-                    <div id="d-trf" class="trf-content">-</div>
-                </div>
+                    <section class="case-grid">
+                        <div class="case-box">
+                            <label>Test Information</label>
+                            <p id="d-test">-</p>
+                        </div>
+                        <div class="case-box">
+                            <label>Client Reference</label>
+                            <p id="d-client">-</p>
+                        </div>
+                    </section>
 
-                <div class="p-section history-box">
-                    <div class="history-header">
-                        <label>Clinical History Writeup</label>
-                        <button id="copy-btn" class="btn-copy">
-                            <i data-lucide="copy"></i>
-                            <span>Copy Text</span>
-                        </button>
-                    </div>
-                    <div id="d-history" class="history-content">-</div>
-                </div>
+                    <section class="case-section trf-box-pro">
+                        <label><i data-lucide="file-digit"></i> TRF & Reporting Status</label>
+                        <div id="d-trf" class="trf-text">-</div>
+                    </section>
 
-                <div class="p-section">
-                    <label>Registry Remarks</label>
-                    <p id="d-remark" class="remark-text">-</p>
+                    <section class="case-section writeup-box-pro">
+                        <label><i data-lucide="text-quote"></i> Clinical History Writeup</label>
+                        <div id="d-history" class="history-text">-</div>
+                    </section>
+
+                    <section class="case-section">
+                        <label><i data-lucide="message-square"></i> Registry Remarks</label>
+                        <p id="d-remark" class="remark-text">-</p>
+                    </section>
                 </div>
             </div>
         </div>
@@ -175,6 +164,6 @@
     </div>
 
     <div id="toast" class="toast"></div>
-    <script src="app.js?v=1.3"></script>
+    <script src="app.js?v=1.4"></script>
 </body>
 </html>
