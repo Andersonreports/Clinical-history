@@ -227,9 +227,16 @@ function getMonthSortValue(m) {
     return (year * 100) + monthIdx;
 }
 
-function getTestCategory(name) {
+function getTestCategory(name, sampleName = '') {
     if (!name) return 'Other';
     const n = name.toString().toUpperCase().trim();
+    const sn = sampleName.toString().toUpperCase().trim();
+
+    // Priority checks for specific categories with custom TATs
+    if (n.includes('FEMALE INFERTILITY')) return 'FEMALE INFERTILITY';
+    if (n.includes('MALE INFERTILITY')) return 'MALE INFERTILITY';
+    if (n.includes('AF') || n.includes('AMNIOTIC') || sn.includes(' AF') || sn.endsWith(' AF') || sn.includes('AF/')) return 'AF';
+
     if (n.includes('CARRIER') || n.includes('SCREENING')) return 'CARRIER SCREENING';
     if (n.includes('WES') || n.includes('EXOME') || n.includes('SEQUENCING')) return 'WES';
     if (n.includes('CMA') || n.includes('ARRAY') || n.includes('MICROARRAY')) return 'CMA';
@@ -244,18 +251,59 @@ function getTestCategory(name) {
     return 'Other';
 }
 
+function calculateTAT(receivedDate, category) {
+    if (!receivedDate || receivedDate === '-' || receivedDate.toString().toLowerCase() === 'nan') return '-';
+    
+    // Parse formats: DD-MM-YYYY or DD/MM/YYYY
+    const parts = receivedDate.toString().split(/[-/]/);
+    if (parts.length !== 3) return '-';
+    
+    let day, month, year;
+    // Basic heuristic: if first part > 12, it's definitely DD-MM-YYYY
+    // Otherwise we assume DD-MM-YYYY based on user example
+    day = parseInt(parts[0]);
+    month = parseInt(parts[1]) - 1; // 0-indexed
+    year = parseInt(parts[2]);
+    
+    if (year < 100) year += 2000; // Handle YY
+
+    const date = new Date(year, month, day);
+    if (isNaN(date.getTime())) return '-';
+    
+    let daysToAdd = 28; // Default for remaining tests
+    if (category === 'FEMALE INFERTILITY' || category === 'MALE INFERTILITY') {
+        daysToAdd = 15;
+    } else if (category === 'AF') {
+        daysToAdd = 20;
+    }
+    
+    date.setDate(date.getDate() + daysToAdd);
+    
+    // Format back to DD-MM-YYYY
+    const d = date.getDate().toString().padStart(2, '0');
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    const y = date.getFullYear();
+    
+    return `${d}-${m}-${y}`;
+}
+
 function normalizeData(data) {
     if (!Array.isArray(data)) return [];
     return data.filter(row => row && (row['Sample Name'] || row['Anderson ID'] || row['SAMPLE NAME'] || row['ANDERSON ID'])).map(row => {
         const sampleName = row['Sample Name'] || row['SAMPLE NAME'] || 'N/A';
         const andersonId = row['Anderson ID'] || row['ANDERSON ID'] || 'N/A';
         const testName = row['Test Name'] || row['TEST NAME'] || 'Unknown Test';
-        const testCategory = getTestCategory(testName);
+        const testCategory = getTestCategory(testName, sampleName);
         const client = row['Client'] || row['Client '] || row['CLIENT'] || '-';
         const history = row['Clinical History writeup'] || row['CLINICAL HISTORY WRITEUP'] || '';
         const month = normalizeMonth(row['Month']);
         const receivedDate = row['Received Date'] || row['RECEIVED DATE'] || row['Recieved date'] || row['Recieved Date'] || '-';
-        const tatDate = row['TAT Date'] || row['TAT DATE'] || row['TAT date'] || '-';
+        
+        // Auto-calculate TAT date if Received Date is present
+        let tatDate = row['TAT Date'] || row['TAT DATE'] || row['TAT date'] || '';
+        if (!tatDate || tatDate === '-' || tatDate.toString().toLowerCase() === 'nan') {
+            tatDate = calculateTAT(receivedDate, testCategory);
+        }
         const remark = row['Remark'] || row['REMARK'] || '';
         const trfReport = row['TRF AND REPORTS'] || row['TRF AND REPORT'] || row['TRF and Reports'] || '';
         const hasHistory = trfReport && trfReport.toString().trim().length > 0 && trfReport.toString().toLowerCase() !== 'nan';
