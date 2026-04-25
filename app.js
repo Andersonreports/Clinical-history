@@ -1,6 +1,6 @@
 // Clinical History Tracker - Clinical OS Logic
 
-const SYNC_URL = 'https://script.google.com/macros/s/AKfycbxXXajUy5_1komoDIFidxrLuehfHVUUTZRlZnfeeTEI68GElYdvJGOvVI16gLPmhmZg/exec';
+const SYNC_URL = 'https://script.google.com/macros/s/AKfycbxXXafajUy5_1komoDIFidxrLuehfHVUUTZRlZnfeeTEI68GElYdvJGOvVI16gLPmhmZg/exec';
 const LOCAL_DATA_PATH = 'data.json';
 const AUTO_SYNC_INTERVAL = 30000; // 30 seconds
 
@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof lucide !== 'undefined') lucide.createIcons();
     initEventListeners();
     loadData();
-    
+
     // Auto-sync every 30 seconds
     setInterval(() => {
         syncData(true); // silent sync
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function initEventListeners() {
     const searchInput = document.getElementById('main-search');
     if (searchInput) searchInput.addEventListener('input', handleSearch);
-    
+
     const testFilter = document.getElementById('test-filter');
     if (testFilter) testFilter.addEventListener('change', handleFilterChange);
 
@@ -55,7 +55,7 @@ function initEventListeners() {
     const btnPending = document.getElementById('btn-stat-pending');
 
     if (btnTotal) btnTotal.onclick = () => restoreAllRecords(); // Clicking Total resets EVERYTHING
-    
+
     if (btnComplete) btnComplete.onclick = () => {
         updateCardActiveState('available');
         state.filters.status = 'available';
@@ -112,12 +112,12 @@ function restoreAllRecords() {
     // UI Updates
     const sInput = document.getElementById('main-search');
     if (sInput) sInput.value = '';
-    
+
     const tFilter = document.getElementById('test-filter');
     if (tFilter) tFilter.value = 'all';
-    
+
     updateCardActiveState('all');
-    
+
     // Sidebar Active State
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     const sidebarAll = document.getElementById('sidebar-all-records');
@@ -130,7 +130,7 @@ function restoreAllRecords() {
 function updateCardActiveState(status) {
     document.querySelectorAll('.pro-card').forEach(c => c.classList.remove('active'));
     const badge = document.getElementById('current-filter-name');
-    
+
     if (status === 'all') {
         const c = document.getElementById('btn-stat-total');
         if (c) c.classList.add('active');
@@ -164,14 +164,14 @@ async function loadData(forceRefresh = false, silent = false) {
                 rawData = await fetchFromSyncSource();
             }
         }
-        
+
         state.data = normalizeData(rawData).sort((a, b) => getMonthSortValue(b.month) - getMonthSortValue(a.month));
-        
+
         populateSidebar();
         populateFilters();
         updateStats();
         applyFilters();
-        
+
         if (forceRefresh && !silent) showToast('Database Synced Successfully.');
     } catch (error) {
         console.error('Data Sync Error:', error);
@@ -253,37 +253,37 @@ function getTestCategory(name, sampleName = '') {
 
 function calculateTAT(receivedDate, category) {
     if (!receivedDate || receivedDate === '-' || receivedDate.toString().toLowerCase() === 'nan') return '-';
-    
+
     // Parse formats: DD-MM-YYYY or DD/MM/YYYY
     const parts = receivedDate.toString().split(/[-/]/);
     if (parts.length !== 3) return '-';
-    
+
     let day, month, year;
     // Basic heuristic: if first part > 12, it's definitely DD-MM-YYYY
     // Otherwise we assume DD-MM-YYYY based on user example
     day = parseInt(parts[0]);
     month = parseInt(parts[1]) - 1; // 0-indexed
     year = parseInt(parts[2]);
-    
+
     if (year < 100) year += 2000; // Handle YY
 
     const date = new Date(year, month, day);
     if (isNaN(date.getTime())) return '-';
-    
+
     let daysToAdd = 28; // Default for remaining tests
     if (category === 'FEMALE INFERTILITY' || category === 'MALE INFERTILITY') {
         daysToAdd = 15;
     } else if (category === 'AF') {
         daysToAdd = 20;
     }
-    
+
     date.setDate(date.getDate() + daysToAdd);
-    
+
     // Format back to DD-MM-YYYY
     const d = date.getDate().toString().padStart(2, '0');
     const m = (date.getMonth() + 1).toString().padStart(2, '0');
     const y = date.getFullYear();
-    
+
     return `${d}-${m}-${y}`;
 }
 
@@ -298,7 +298,7 @@ function normalizeData(data) {
         const history = row['Clinical History writeup'] || row['CLINICAL HISTORY WRITEUP'] || '';
         const month = normalizeMonth(row['Month']);
         const receivedDate = row['Received Date'] || row['RECEIVED DATE'] || row['Recieved date'] || row['Recieved Date'] || '-';
-        
+
         // Auto-calculate TAT date if Received Date is present
         let tatDate = row['TAT Date'] || row['TAT DATE'] || row['TAT date'] || '';
         if (!tatDate || tatDate === '-' || tatDate.toString().toLowerCase() === 'nan') {
@@ -317,17 +317,17 @@ function normalizeData(data) {
 function populateSidebar() {
     const nav = document.getElementById('sidebar-months');
     if (!nav) return;
-    
+
     // Clear existing dynamic months (keep labels and All Records)
     const labelView = nav.querySelector('.nav-label');
     const allRecords = document.getElementById('sidebar-all-records');
     nav.innerHTML = '';
     if (labelView) nav.appendChild(labelView);
     if (allRecords) nav.appendChild(allRecords);
-    
+
     const rawMonths = [...new Set(state.data.map(item => item.month))].filter(Boolean);
     const sortedMonths = rawMonths.sort((a, b) => getMonthSortValue(b) - getMonthSortValue(a));
-    
+
     const byMonthLabel = document.createElement('div');
     byMonthLabel.className = 'nav-label';
     byMonthLabel.textContent = 'By Month';
@@ -391,7 +391,7 @@ function handleFilterChange() {
 function applyFilters() {
     state.filteredData = state.data.filter(item => {
         const query = state.searchQuery;
-        const matchesSearch = 
+        const matchesSearch =
             item.sampleName.toLowerCase().includes(query) ||
             item.andersonId.toString().toLowerCase().includes(query) ||
             item.testName.toLowerCase().includes(query) ||
@@ -409,7 +409,7 @@ function applyFilters() {
 function renderGrid() {
     const body = document.getElementById('grid-body');
     if (!body) return;
-    
+
     const totalPages = Math.ceil(state.filteredData.length / state.itemsPerPage);
     if (state.currentPage > totalPages && totalPages > 0) {
         state.currentPage = totalPages;
@@ -473,9 +473,9 @@ function renderPagination(totalItems) {
         btn.className = `page-btn ${active ? 'active' : ''}`;
         btn.innerHTML = content;
         btn.disabled = disabled;
-        btn.onclick = (e) => { 
+        btn.onclick = (e) => {
             e.stopPropagation();
-            if(!disabled) { state.currentPage = page; renderGrid(); } 
+            if (!disabled) { state.currentPage = page; renderGrid(); }
         };
         return btn;
     };
