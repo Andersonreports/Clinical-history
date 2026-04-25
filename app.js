@@ -302,11 +302,22 @@ function normalizeData(data) {
         const client = row['Client'] || row['Client '] || row['CLIENT'] || '-';
         const history = row['Clinical History writeup'] || row['CLINICAL HISTORY WRITEUP'] || '';
         const month = normalizeMonth(row['Month']);
-        const receivedDateRaw = row['Received Date'] || row['RECEIVED DATE'] || row['Recieved date'] || row['Recieved Date'] || '-';
+        
+        // Robust header detection
+        const getVal = (patterns) => {
+            const keys = Object.keys(row);
+            for (const p of patterns) {
+                const foundKey = keys.find(k => k.trim().toUpperCase() === p.toUpperCase());
+                if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null) return row[foundKey];
+            }
+            return '-';
+        };
+
+        const receivedDateRaw = getVal(['Received Date', 'RECEIVED DATE', 'Recieved date', 'Recieved Date', 'Date Received', 'DATE']);
         let receivedDate = receivedDateRaw;
 
-        // If it's an ISO string (from Excel), format it to DD-MM-YYYY for display
-        if (receivedDateRaw.toString().includes('T')) {
+        // If it's an ISO string (from Excel/Google), format it to DD-MM-YYYY for display
+        if (receivedDateRaw.toString().includes('T') || (receivedDateRaw instanceof Date)) {
             const dObj = new Date(receivedDateRaw);
             if (!isNaN(dObj.getTime())) {
                 const dd = dObj.getDate().toString().padStart(2, '0');
@@ -317,7 +328,7 @@ function normalizeData(data) {
         }
         
         // Auto-calculate TAT date if Received Date is present
-        let tatDate = row['TAT Date'] || row['TAT DATE'] || row['TAT date'] || '';
+        let tatDate = getVal(['TAT Date', 'TAT DATE', 'TAT date', 'TAT']);
         if (!tatDate || tatDate === '-' || tatDate.toString().toLowerCase() === 'nan') {
             tatDate = calculateTAT(receivedDateRaw, testCategory);
         }
