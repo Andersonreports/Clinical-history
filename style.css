@@ -369,3 +369,5 @@ tr:hover td {
 
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* v1.2 Force Update */

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clinical History Tracker | Anderson Reports</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -46,7 +46,7 @@
                     <option value="needed">History Missing</option>
                     <option value="available">History Available</option>
                 </select>
-                <select id="test-filter">
+                <select id="test-filter" style="max-width: 200px;">
                     <option value="all">All Test Types</option>
                 </select>
             </div>
@@ -62,8 +62,8 @@
                             <th style="width: 150px;">Anderson ID</th>
                             <th style="width: 180px;">Test Type</th>
                             <th style="width: 120px;">Month</th>
-                            <th>Status</th>
-                            <th style="width: 100px;">Actions</th>
+                            <th style="width: 140px;">Status</th>
+                            <th style="width: 80px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="grid-body">
@@ -123,6 +123,6 @@
     </div>
 
     <div id="toast" class="toast"></div>
-    <script src="app.js"></script>
+    <script src="app.js?v=1.2"></script>
 </body>
 </html>
