@@ -423,11 +423,10 @@ function renderGrid() {
             <p style="font-weight:600;">No cases found in this view</p>
         </td></tr>`;
         if (typeof lucide !== 'undefined') lucide.createIcons();
-        renderPagination(0);
         return;
     }
     pageData.forEach((item, index) => {
-        const absoluteIndex = start + index;
+        const absoluteIndex = index;
         const tr = document.createElement('tr');
         tr.onclick = () => openSidePanel(absoluteIndex);
         tr.innerHTML = `
