@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clinical History Tracker | Anderson Reports</title>
-    <link rel="stylesheet" href="style.css?v=1.4">
+    <link rel="stylesheet" href="style.css?v=1.5">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -13,76 +13,57 @@
 </head>
 <body class="modern-os">
     <div class="app-shell">
-        <!-- Sidebar Navigation (Months) -->
-        <aside class="app-sidebar">
-            <div class="sidebar-brand">
-                <i data-lucide="dna"></i>
-                <span>Clinical OS</span>
-            </div>
-            <nav class="month-nav" id="sidebar-months">
-                <div class="nav-label">Time Period</div>
-                <!-- Month links injected here -->
-            </nav>
-        </aside>
-
-        <!-- Main Content -->
+        <!-- Main Content (Left) -->
         <main class="app-main">
             <!-- Global Header -->
             <header class="global-header">
                 <div class="header-search">
                     <i data-lucide="search"></i>
-                    <input type="text" id="main-search" placeholder="Quick find patient, ID, or case details...">
+                    <input type="text" id="main-search" placeholder="Search patients, IDs, or cases...">
                 </div>
                 <div class="header-user">
                     <button id="sync-btn" class="btn-sync-pro">
                         <i data-lucide="refresh-cw"></i>
-                        <span>Refresh Live Data</span>
+                        <span>Refresh Data</span>
                     </button>
                 </div>
             </header>
 
-            <!-- Pro Dashboard Stats -->
+            <!-- Compact Dashboard Stats -->
             <section class="dashboard-grid">
                 <div class="pro-card card-total" id="btn-stat-total">
-                    <div class="card-icon"><i data-lucide="database"></i></div>
+                    <div class="card-icon-mini"><i data-lucide="database"></i></div>
                     <div class="card-body">
+                        <p>Total Cases</p>
                         <h2 id="stat-total">0</h2>
-                        <p>Total Cases Tracked</p>
                     </div>
-                    <div class="card-visual"><div class="visual-bar" style="width: 100%;"></div></div>
                 </div>
                 <div class="pro-card card-success" id="btn-stat-complete">
-                    <div class="card-icon"><i data-lucide="file-check-2"></i></div>
+                    <div class="card-icon-mini"><i data-lucide="file-check-2"></i></div>
                     <div class="card-body">
-                        <h2 id="stat-complete">0</h2>
                         <p>History Available</p>
+                        <h2 id="stat-complete">0</h2>
                     </div>
-                    <div class="card-visual"><div class="visual-bar" id="stat-complete-bar" style="width: 0%;"></div></div>
                 </div>
                 <div class="pro-card card-danger" id="btn-stat-pending">
-                    <div class="card-icon"><i data-lucide="clipboard-list"></i></div>
+                    <div class="card-icon-mini"><i data-lucide="clipboard-list"></i></div>
                     <div class="card-body">
-                        <h2 id="stat-pending">0</h2>
                         <p>History Required</p>
+                        <h2 id="stat-pending">0</h2>
                     </div>
-                    <div class="card-visual"><div class="visual-bar danger" id="stat-pending-bar" style="width: 0%;"></div></div>
                 </div>
             </section>
 
             <!-- Control Bar -->
             <div class="control-bar">
-                <div class="control-left">
-                    <div class="pill-filters">
-                        <button class="pill active" data-filter="all">All Cases</button>
-                        <button class="pill" data-filter="needed">Needs History</button>
-                        <button class="pill" data-filter="available">Completed</button>
-                    </div>
+                <div class="pill-filters">
+                    <button class="pill active" data-filter="all">All Cases</button>
+                    <button class="pill" data-filter="needed">Needs History</button>
+                    <button class="pill" data-filter="available">Completed</button>
                 </div>
-                <div class="control-right">
-                    <select id="test-filter" class="select-pro">
-                        <option value="all">Filter by Test Category</option>
-                    </select>
-                </div>
+                <select id="test-filter" class="select-pro">
+                    <option value="all">All Test Categories</option>
+                </select>
             </div>
 
             <!-- Data Surface -->
@@ -93,7 +74,7 @@
                             <tr>
                                 <th>Patient Identity</th>
                                 <th>Tracking ID</th>
-                                <th>Test Type</th>
+                                <th>Test Information</th>
                                 <th>Month</th>
                                 <th>Clinical Status</th>
                                 <th style="text-align: right;">Action</th>
@@ -106,20 +87,32 @@
                 </div>
                 
                 <div class="surface-footer">
-                    <span id="pagination-info">Showing 0 of 0 cases</span>
+                    <span id="pagination-info">Showing 0 cases</span>
                     <div id="pagination" class="pagination-pro"></div>
                 </div>
             </div>
         </main>
+
+        <!-- Sidebar Navigation (Now on Right) -->
+        <aside class="app-sidebar right-aligned">
+            <div class="sidebar-brand">
+                <i data-lucide="dna"></i>
+                <span>Clinical OS</span>
+            </div>
+            <nav class="month-nav" id="sidebar-months">
+                <div class="nav-label">Global View</div>
+                <!-- Month links injected here -->
+            </nav>
+        </aside>
 
         <!-- Professional Case Panel -->
         <div id="side-panel" class="pro-panel">
             <div class="panel-blur"></div>
             <div class="panel-content">
                 <header class="panel-header">
-                    <button id="close-panel" class="btn-back"><i data-lucide="arrow-left"></i> <span>Back to List</span></button>
+                    <button id="close-panel" class="btn-back"><i data-lucide="arrow-left"></i> <span>Close</span></button>
                     <div class="panel-actions">
-                        <button id="copy-btn" class="btn-action-pro"><i data-lucide="copy"></i> Copy Writeup</button>
+                        <button id="copy-btn" class="btn-action-pro"><i data-lucide="copy"></i> Copy</button>
                     </div>
                 </header>
 
@@ -164,6 +157,6 @@
     </div>
 
     <div id="toast" class="toast"></div>
-    <script src="app.js?v=1.4"></script>
+    <script src="app.js?v=1.5"></script>
 </body>
 </html>
