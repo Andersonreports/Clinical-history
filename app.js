@@ -1,6 +1,5 @@
-// Clinical History Tracker - Utility App Logic
+// Clinical History Tracker - Grid Workspace Logic
 
-// SYNC_URL is used for live multi-sheet sync from Google Apps Script
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbxXXafajUy5_1komoDIFidxrLuehfHVUUTZRlZnfeeTEI68GElYdvJGOvVI16gLPmhmZg/exec';
 const LOCAL_DATA_PATH = 'data.json';
 
@@ -14,7 +13,7 @@ let state = {
         status: 'all'
     },
     currentPage: 1,
-    itemsPerPage: 20,
+    itemsPerPage: 50, // Higher density for grid
     selectedIndex: -1
 };
 
@@ -40,6 +39,11 @@ function initEventListeners() {
     
     const syncBtn = document.getElementById('sync-btn');
     if (syncBtn) syncBtn.addEventListener('click', syncData);
+
+    const closePanel = document.getElementById('close-panel');
+    const overlay = document.getElementById('panel-overlay');
+    if (closePanel) closePanel.onclick = closeSidePanel;
+    if (overlay) overlay.onclick = closeSidePanel;
     
     // Global Shortcut
     document.addEventListener('keydown', (e) => {
@@ -47,6 +51,7 @@ function initEventListeners() {
             e.preventDefault();
             if (searchInput) searchInput.focus();
         }
+        if (e.key === 'Escape') closeSidePanel();
     });
 
     // Copy Action
@@ -57,7 +62,7 @@ function initEventListeners() {
             if (historyEl) {
                 const text = historyEl.innerText;
                 navigator.clipboard.writeText(text).then(() => {
-                    showToast('Clinical history copied');
+                    showToast('History copied to clipboard');
                 });
             }
         });
@@ -79,7 +84,7 @@ async function loadData(forceRefresh = false) {
                     throw new Error('Local data file not found');
                 }
             } catch (err) {
-                console.warn('Local data load failed, falling back to live sync...', err);
+                console.warn('Local load failed, syncing live...', err);
                 rawData = await fetchFromSyncSource();
             }
         }
@@ -89,25 +94,23 @@ async function loadData(forceRefresh = false) {
         
         populateFilters();
         updateStats();
-        renderList();
+        renderGrid();
         
-        if (forceRefresh) showToast('Tracker synchronized across all sheets');
+        if (forceRefresh) showToast('Grid data synchronized');
     } catch (error) {
         console.error('Data Sync Error:', error);
-        showToast('Sync failed. Please check Apps Script deployment.', 'error');
+        showToast('Sync failed. Check Apps Script URL.', 'error');
     } finally {
         showLoading(false);
     }
 }
 
 async function fetchFromSyncSource() {
-    // Check if SYNC_URL is an Apps Script URL (contains script.google.com) or a CSV export
     if (SYNC_URL.includes('script.google.com')) {
         const response = await fetch(SYNC_URL);
         if (!response.ok) throw new Error('Apps Script unreachable');
         return await response.json();
     } else {
-        // Fallback to CSV for the single gid provided
         return new Promise((resolve, reject) => {
             Papa.parse(SYNC_URL, {
                 download: true,
@@ -129,53 +132,34 @@ function normalizeData(data) {
         const history = row['Clinical History writeup'] || row['CLINICAL HISTORY WRITEUP'] || '';
         const month = row['Month'] || 'Active';
         const remark = row['Remark'] || row['REMARK'] || '';
-        
-        // NEW LOGIC: Check TRF and Report column for availability
-        const trfReport = row['TRF AND REPORTS'] || row['TRF AND REPORT'] || row['TRF and Reports'] || row['TRF and reports'] || '';
-        
-        // If TRF and Report has a value, history is considered "Available"
+        const trfReport = row['TRF AND REPORTS'] || row['TRF AND REPORT'] || row['TRF and Reports'] || '';
         const hasHistory = trfReport && trfReport.toString().trim().length > 0 && trfReport.toString().toLowerCase() !== 'nan';
 
         return {
-            sampleName,
-            andersonId,
-            testName,
-            client,
-            history,
-            trfReport,
-            month,
-            remark,
-            hasHistory
+            sampleName, andersonId, testName, client, history, trfReport, month, remark, hasHistory
         };
     });
 }
 
 function populateFilters() {
-    const months = [...new Set(state.data.map(item => item.month))].filter(Boolean).sort((a, b) => {
-        // Sort months roughly by recency if they contain year
-        return b.localeCompare(a);
-    });
+    const months = [...new Set(state.data.map(item => item.month))].filter(Boolean).sort((a, b) => b.localeCompare(a));
     const tests = [...new Set(state.data.map(item => item.testName))].filter(Boolean).sort();
 
     const mSelect = document.getElementById('month-filter');
     const tSelect = document.getElementById('test-filter');
 
     if (mSelect) {
-        const currentVal = mSelect.value;
+        const current = mSelect.value;
         mSelect.innerHTML = '<option value="all">All Months</option>';
-        months.forEach(m => {
-            mSelect.innerHTML += `<option value="${m}">${m}</option>`;
-        });
-        mSelect.value = currentVal || 'all';
+        months.forEach(m => { mSelect.innerHTML += `<option value="${m}">${m}</option>`; });
+        mSelect.value = current || 'all';
     }
 
     if (tSelect) {
-        const currentVal = tSelect.value;
-        tSelect.innerHTML = '<option value="all">All Tests</option>';
-        tests.forEach(t => {
-            tSelect.innerHTML += `<option value="${t}">${t.substring(0, 30)}</option>`;
-        });
-        tSelect.value = currentVal || 'all';
+        const current = tSelect.value;
+        tSelect.innerHTML = '<option value="all">All Test Types</option>';
+        tests.forEach(t => { tSelect.innerHTML += `<option value="${t}">${t.substring(0, 30)}</option>`; });
+        tSelect.value = current || 'all';
     }
 }
 
@@ -183,14 +167,9 @@ function updateStats() {
     const total = state.data.length;
     const complete = state.data.filter(i => i.hasHistory).length;
     
-    const totalEl = document.getElementById('stat-total');
-    if (totalEl) totalEl.textContent = total;
-    
-    const completeEl = document.getElementById('stat-complete');
-    if (completeEl) completeEl.textContent = complete;
-    
-    const pendingEl = document.getElementById('stat-pending');
-    if (pendingEl) pendingEl.textContent = total - complete;
+    document.getElementById('stat-total').textContent = total.toLocaleString();
+    document.getElementById('stat-complete').textContent = complete.toLocaleString();
+    document.getElementById('stat-pending').textContent = (total - complete).toLocaleString();
 }
 
 function handleSearch(e) {
@@ -226,41 +205,48 @@ function applyFilters() {
         return matchesSearch && matchesMonth && matchesTest && matchesStatus;
     });
 
-    renderList();
+    renderGrid();
 }
 
-function renderList() {
-    const listContainer = document.getElementById('case-list');
-    if (!listContainer) return;
+function renderGrid() {
+    const body = document.getElementById('grid-body');
+    if (!body) return;
     
-    listContainer.innerHTML = '';
+    body.innerHTML = '';
 
     const start = (state.currentPage - 1) * state.itemsPerPage;
     const end = Math.min(start + state.itemsPerPage, state.filteredData.length);
     const pageData = state.filteredData.slice(start, end);
 
     if (pageData.length === 0) {
-        listContainer.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">No records found</div>';
+        body.innerHTML = '<tr><td colspan="6" style="padding: 100px; text-align:center; color: var(--text-muted);">No records found matching filters</td></tr>';
         renderPagination(0);
         return;
     }
 
     pageData.forEach((item, index) => {
         const absoluteIndex = start + index;
-        const div = document.createElement('div');
-        div.className = `case-item ${state.selectedIndex === absoluteIndex ? 'active' : ''}`;
-        div.onclick = () => selectItem(absoluteIndex);
+        const tr = document.createElement('tr');
+        tr.onclick = () => openSidePanel(absoluteIndex);
         
-        div.innerHTML = `
-            <div class="case-info">
-                <span class="name">${item.sampleName}</span>
-                <span class="id">${item.andersonId}</span>
-            </div>
-            <div class="case-status ${item.hasHistory ? 'complete' : 'pending'}"></div>
+        tr.innerHTML = `
+            <td><div style="font-weight: 600;">${item.sampleName}</div></td>
+            <td><code style="font-size: 11px;">${item.andersonId}</code></td>
+            <td>${item.testName}</td>
+            <td>${item.month}</td>
+            <td>
+                <span class="status-badge ${item.hasHistory ? 'available' : 'missing'}">
+                    ${item.hasHistory ? 'History OK' : 'Missing'}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-sm" style="padding: 2px 8px; font-size: 10px;">VIEW</button>
+            </td>
         `;
-        listContainer.appendChild(div);
+        body.appendChild(tr);
     });
 
+    document.getElementById('pagination-info').textContent = `Showing ${start + 1}-${end} of ${state.filteredData.length}`;
     renderPagination(state.filteredData.length);
 }
 
@@ -270,7 +256,6 @@ function renderPagination(totalItems) {
     if (!container) return;
     
     container.innerHTML = '';
-
     if (totalPages <= 1) return;
 
     const createBtn = (content, page, active = false, disabled = false) => {
@@ -280,10 +265,7 @@ function renderPagination(totalItems) {
         btn.disabled = disabled;
         btn.onclick = (e) => { 
             e.stopPropagation();
-            if(!disabled) { 
-                state.currentPage = page; 
-                renderList(); 
-            } 
+            if(!disabled) { state.currentPage = page; renderGrid(); } 
         };
         return btn;
     };
@@ -301,50 +283,26 @@ function renderPagination(totalItems) {
     container.appendChild(createBtn('&raquo;', state.currentPage + 1, false, state.currentPage === totalPages));
 }
 
-function selectItem(index) {
-    state.selectedIndex = index;
+function openSidePanel(index) {
     const item = state.filteredData[index];
     if (!item) return;
     
-    const emptyState = document.getElementById('empty-state');
-    const workspaceContent = document.getElementById('workspace-content');
+    document.getElementById('d-name').textContent = item.sampleName;
+    document.getElementById('d-id').textContent = item.andersonId;
+    document.getElementById('d-test').textContent = item.testName;
+    document.getElementById('d-month').textContent = item.month;
+    document.getElementById('d-client').textContent = item.client;
+    document.getElementById('d-trf').textContent = item.trfReport || 'No TRF information available.';
+    document.getElementById('d-history').textContent = item.history || 'NO HISTORY WRITTEN';
+    document.getElementById('d-remark').textContent = item.remark || 'No remarks.';
     
-    if (emptyState) emptyState.style.display = 'none';
-    if (workspaceContent) workspaceContent.style.display = 'block';
-    
-    const nameEl = document.getElementById('d-name');
-    if (nameEl) nameEl.textContent = item.sampleName;
-    
-    const idEl = document.getElementById('d-id');
-    if (idEl) idEl.textContent = `ID: ${item.andersonId}`;
-    
-    const testEl = document.getElementById('d-test');
-    if (testEl) testEl.textContent = item.testName;
-    
-    const clientEl = document.getElementById('d-client');
-    if (clientEl) clientEl.textContent = item.client;
-    
-    const monthEl = document.getElementById('d-month');
-    if (monthEl) monthEl.textContent = item.month;
-    
-    const historyEl = document.getElementById('d-history');
-    if (historyEl) historyEl.textContent = item.history || 'NO WRITEUP AVAILABLE';
-    
-    const remarkEl = document.getElementById('d-remark');
-    if (remarkEl) remarkEl.textContent = item.remark || 'N/A';
-    
-    const trfEl = document.getElementById('d-trf-info');
-    if (trfEl) trfEl.textContent = item.trfReport || 'No TRF/Report information available.';
-    
-    const statusPill = document.getElementById('d-status');
-    if (statusPill) {
-        statusPill.textContent = item.hasHistory ? 'History Available' : 'Needs History';
-        statusPill.style.background = item.hasHistory ? '#ecfdf5' : '#fef2f2';
-        statusPill.style.color = item.hasHistory ? '#059669' : '#dc2626';
-    }
+    document.getElementById('side-panel').classList.add('open');
+    document.getElementById('panel-overlay').classList.add('active');
+}
 
-    renderList();
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+function closeSidePanel() {
+    document.getElementById('side-panel').classList.remove('open');
+    document.getElementById('panel-overlay').classList.remove('active');
 }
 
 function showLoading(show) {
@@ -354,7 +312,7 @@ function showLoading(show) {
             btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i><span>Syncing...</span>';
             btn.disabled = true;
         } else {
-            btn.innerHTML = '<i data-lucide="refresh-cw"></i><span>Sync Live</span>';
+            btn.innerHTML = '<i data-lucide="refresh-cw"></i><span>Sync Live Data</span>';
             btn.disabled = false;
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
@@ -365,7 +323,7 @@ function showToast(message, type = 'info') {
     const toast = document.getElementById('toast');
     if (toast) {
         toast.textContent = message;
-        toast.style.background = type === 'error' ? '#ef4444' : '#0f172a';
+        toast.style.borderLeft = `4px solid ${type === 'error' ? '#ef4444' : '#10b981'}`;
         toast.classList.add('show');
         setTimeout(() => toast.classList.remove('show'), 3000);
     }
