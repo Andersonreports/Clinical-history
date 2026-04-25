@@ -1,6 +1,6 @@
 // Clinical History Tracker - Clinical OS Logic
 
-const SYNC_URL = 'https://docs.google.com/spreadsheets/d/1kaZn-xNyskSrwq41Y0UCzlevb5TVjKyAYcdpnJuxxoE/edit?gid=1779960625#gid=1779960625';
+const SYNC_URL = 'https://script.google.com/macros/s/AKfycbxXXafajUy5_1komoDIFidxrLuehfHVUUTZRlZnfeeTEI68GElYdvJGOvVI16gLPmhmZg/exec';
 const LOCAL_DATA_PATH = 'data.json';
 const AUTO_SYNC_INTERVAL = 30000; // 30 seconds
 
