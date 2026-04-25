@@ -14,7 +14,7 @@ let state = {
         status: 'all'
     },
     currentPage: 1,
-    itemsPerPage: 50,
+    itemsPerPage: 10000, // Effectively unlimited for scrollable view
     selectedIndex: -1
 };
 
@@ -368,9 +368,7 @@ function renderGrid() {
     }
 
     body.innerHTML = '';
-    const start = (state.currentPage - 1) * state.itemsPerPage;
-    const end = Math.min(start + state.itemsPerPage, state.filteredData.length);
-    const pageData = state.filteredData.slice(start, end);
+    const pageData = state.filteredData;
     if (pageData.length === 0) {
         body.innerHTML = `<tr><td colspan="7" style="padding: 100px; text-align:center; color: var(--text-dim);">
             <i data-lucide="inbox" style="width:40px; height:40px; opacity:0.1; margin-bottom:10px;"></i>
@@ -413,8 +411,7 @@ function renderGrid() {
         body.appendChild(tr);
     });
     const infoEl = document.getElementById('pagination-info');
-    if (infoEl) infoEl.textContent = `Displaying ${start + 1}-${end} of ${state.filteredData.length} records`;
-    renderPagination(state.filteredData.length);
+    if (infoEl) infoEl.textContent = `Displaying ${state.filteredData.length} records`;
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
