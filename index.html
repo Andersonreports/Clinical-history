@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinical History Tracker | Anderson Reports</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
+</head>
+<body class="tracker-theme">
+    <div class="tracker-container">
+        <!-- Utility Header -->
+        <header class="tracker-header">
+            <div class="brand">
+                <i data-lucide="activity"></i>
+                <span class="brand-name">ClinicalTracker <span class="version">v2.1</span></span>
+            </div>
+            
+            <div class="tracker-stats">
+                <div class="stat">
+                    <span class="label">Total Records</span>
+                    <span id="stat-total" class="value">0</span>
+                </div>
+                <div class="stat">
+                    <span class="label">History Available</span>
+                    <span id="stat-complete" class="value">0</span>
+                </div>
+                <div class="stat">
+                    <span class="label">Needs History</span>
+                    <span id="stat-pending" class="value">0</span>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <button id="sync-btn" class="btn-sync">
+                    <i data-lucide="refresh-cw"></i>
+                    <span>Sync Live</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Workspace (Split Pane) -->
+        <main class="tracker-workspace">
+            <!-- Left Sidebar: List View -->
+            <aside class="list-pane">
+                <div class="pane-header">
+                    <div class="search-box">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="main-search" placeholder="Filter by Name or ID...">
+                    </div>
+                    <div class="filter-row">
+                        <select id="month-filter">
+                            <option value="all">All Months</option>
+                        </select>
+                        <select id="status-filter">
+                            <option value="all">All Status</option>
+                            <option value="needed">Needs History</option>
+                            <option value="available">Available</option>
+                        </select>
+                    </div>
+                    <div class="filter-row">
+                        <select id="test-filter" style="width: 100%;">
+                            <option value="all">All Tests</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="scroll-area" id="case-list">
+                    <!-- Case list items go here -->
+                </div>
+
+                <div class="pane-footer">
+                    <div id="pagination" class="pagination"></div>
+                </div>
+            </aside>
+
+            <!-- Right Area: Detail Workspace -->
+            <section class="detail-pane" id="detail-pane">
+                <div class="empty-state" id="empty-state">
+                    <i data-lucide="mouse-pointer-click"></i>
+                    <p>Select a record from the list to view tracking details</p>
+                </div>
+
+                <div class="workspace-content" id="workspace-content" style="display: none;">
+                    <div class="workspace-header">
+                        <div class="patient-title">
+                            <h2 id="d-name">Patient Name</h2>
+                            <span id="d-id" class="id-badge">ID: 00000</span>
+                        </div>
+                        <div class="quick-actions">
+                            <button class="btn-tool" id="copy-btn" title="Copy History"><i data-lucide="copy"></i></button>
+                            <button class="btn-tool" title="Print"><i data-lucide="printer"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="workspace-grid">
+                        <div class="info-card">
+                            <label>Analysis Type</label>
+                            <p id="d-test">-</p>
+                        </div>
+                        <div class="info-card">
+                            <label>Client Reference</label>
+                            <p id="d-client">-</p>
+                        </div>
+                        <div class="info-card">
+                            <label>Record Month</label>
+                            <p id="d-month">-</p>
+                        </div>
+                    </div>
+
+                    <!-- TRF & Reports Status (Primary Tracking) -->
+                    <div class="trf-alert-box">
+                        <div class="alert-header">
+                            <label><i data-lucide="file-check"></i> TRF & REPORTS STATUS</label>
+                            <span class="status-pill" id="d-status">Draft</span>
+                        </div>
+                        <div id="d-trf-info" class="trf-info-content">
+                            <!-- TRF data -->
+                        </div>
+                    </div>
+
+                    <div class="history-editor">
+                        <div class="editor-toolbar">
+                            <span><i data-lucide="file-text"></i> Clinical History Writeup</span>
+                        </div>
+                        <div class="editor-content" id="d-history">
+                            <!-- History text -->
+                        </div>
+                    </div>
+
+                    <div class="remarks-area">
+                        <label>Registry Remarks</label>
+                        <p id="d-remark">-</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
