@@ -252,37 +252,43 @@ function getTestCategory(name, sampleName = '') {
 
 function calculateTAT(receivedDate, category) {
     if (!receivedDate || receivedDate === '-' || receivedDate.toString().toLowerCase() === 'nan') return '-';
+    
+    let date;
+    const str = receivedDate.toString();
 
-    // Parse formats: DD-MM-YYYY or DD/MM/YYYY
-    const parts = receivedDate.toString().split(/[-/]/);
-    if (parts.length !== 3) return '-';
+    // Handle ISO strings (common in Excel-to-JSON exports)
+    if (str.includes('T')) {
+        date = new Date(str);
+        // If it's a UTC string from an Excel export, we should treat it as local date
+        // But for now, new Date(str) is the safest way to get a valid date object.
+    } else {
+        // Parse formats: DD-MM-YYYY or DD/MM/YYYY
+        const parts = str.split(/[-/]/);
+        if (parts.length !== 3) return '-';
+        
+        let day = parseInt(parts[0]);
+        let month = parseInt(parts[1]) - 1; // 0-indexed
+        let year = parseInt(parts[2]);
+        if (year < 100) year += 2000;
+        date = new Date(year, month, day);
+    }
 
-    let day, month, year;
-    // Basic heuristic: if first part > 12, it's definitely DD-MM-YYYY
-    // Otherwise we assume DD-MM-YYYY based on user example
-    day = parseInt(parts[0]);
-    month = parseInt(parts[1]) - 1; // 0-indexed
-    year = parseInt(parts[2]);
-
-    if (year < 100) year += 2000; // Handle YY
-
-    const date = new Date(year, month, day);
-    if (isNaN(date.getTime())) return '-';
-
+    if (!date || isNaN(date.getTime())) return '-';
+    
     let daysToAdd = 28; // Default for remaining tests
     if (category === 'FEMALE INFERTILITY' || category === 'MALE INFERTILITY') {
         daysToAdd = 15;
     } else if (category === 'AF') {
         daysToAdd = 20;
     }
-
+    
     date.setDate(date.getDate() + daysToAdd);
-
+    
     // Format back to DD-MM-YYYY
     const d = date.getDate().toString().padStart(2, '0');
     const m = (date.getMonth() + 1).toString().padStart(2, '0');
     const y = date.getFullYear();
-
+    
     return `${d}-${m}-${y}`;
 }
 
@@ -296,12 +302,24 @@ function normalizeData(data) {
         const client = row['Client'] || row['Client '] || row['CLIENT'] || '-';
         const history = row['Clinical History writeup'] || row['CLINICAL HISTORY WRITEUP'] || '';
         const month = normalizeMonth(row['Month']);
-        const receivedDate = row['Received Date'] || row['RECEIVED DATE'] || row['Recieved date'] || row['Recieved Date'] || '-';
+        const receivedDateRaw = row['Received Date'] || row['RECEIVED DATE'] || row['Recieved date'] || row['Recieved Date'] || '-';
+        let receivedDate = receivedDateRaw;
 
+        // If it's an ISO string (from Excel), format it to DD-MM-YYYY for display
+        if (receivedDateRaw.toString().includes('T')) {
+            const dObj = new Date(receivedDateRaw);
+            if (!isNaN(dObj.getTime())) {
+                const dd = dObj.getDate().toString().padStart(2, '0');
+                const mm = (dObj.getMonth() + 1).toString().padStart(2, '0');
+                const yyyy = dObj.getFullYear();
+                receivedDate = `${dd}-${mm}-${yyyy}`;
+            }
+        }
+        
         // Auto-calculate TAT date if Received Date is present
         let tatDate = row['TAT Date'] || row['TAT DATE'] || row['TAT date'] || '';
         if (!tatDate || tatDate === '-' || tatDate.toString().toLowerCase() === 'nan') {
-            tatDate = calculateTAT(receivedDate, testCategory);
+            tatDate = calculateTAT(receivedDateRaw, testCategory);
         }
         const remark = row['Remark'] || row['REMARK'] || '';
         const trfReport = row['TRF AND REPORTS'] || row['TRF AND REPORT'] || row['TRF and Reports'] || '';
@@ -443,8 +461,8 @@ function renderGrid() {
                     <span style="font-size:11px; color:var(--text-dim); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.testName}</span>
                 </div>
             </td>
-            <td style="font-weight:600; font-size:12px;">${item.receivedDate}</td>
-            <td style="font-weight:600; font-size:12px;">${item.tatDate}</td>
+            <td style="font-weight:600; font-size:12px; white-space:nowrap; min-width:110px;">${item.receivedDate}</td>
+            <td style="font-weight:600; font-size:12px; white-space:nowrap; min-width:110px;">${item.tatDate}</td>
             <td>
                 <div class="status-dot-badge">
                     <div class="dot ${item.hasHistory ? 'ok' : 'missing'}"></div>
