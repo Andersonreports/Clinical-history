@@ -147,7 +147,7 @@ async function loadData(forceRefresh = false) {
         updateStats();
         renderGrid();
         
-        if (forceRefresh) showToast('Sync Complete: Restored and organized all cases.');
+        if (forceRefresh) showToast('Sync Complete: Data normalized and sorted.');
     } catch (error) {
         console.error('Data Sync Error:', error);
         showToast('Connection failed. Please check Apps Script deployment.', 'error');
@@ -171,6 +171,49 @@ async function fetchFromSyncSource() {
             });
         });
     }
+}
+
+function normalizeMonth(m) {
+    if (!m || m.toLowerCase().includes('sheet')) return 'ACTIVE';
+    
+    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const fullMonths = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+    
+    let str = m.toString().toUpperCase().replace(/\s+/g, '');
+    
+    // Try to find month
+    let foundMonth = -1;
+    let foundYear = '';
+    
+    // Check for "OCT2025" style
+    for (let i = 0; i < 12; i++) {
+        if (str.includes(months[i]) || str.includes(fullMonths[i])) {
+            foundMonth = i;
+            break;
+        }
+    }
+    
+    // Try to find 4 digit year
+    const yearMatch = str.match(/\d{4}/);
+    if (yearMatch) foundYear = yearMatch[0];
+    
+    if (foundMonth !== -1 && foundYear) {
+        return `${months[foundMonth]} ${foundYear}`;
+    }
+    
+    return m.toString().toUpperCase();
+}
+
+function getMonthSortValue(m) {
+    if (m === 'ACTIVE') return 999999;
+    const parts = m.split(' ');
+    if (parts.length !== 2) return 0;
+    
+    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const monthIdx = months.indexOf(parts[0]);
+    const year = parseInt(parts[1]);
+    
+    return (year * 100) + monthIdx;
 }
 
 function getTestCategory(name) {
@@ -200,7 +243,7 @@ function normalizeData(data) {
         const testCategory = getTestCategory(testName);
         const client = row['Client'] || row['Client '] || row['CLIENT'] || '-';
         const history = row['Clinical History writeup'] || row['CLINICAL HISTORY WRITEUP'] || '';
-        const month = row['Month'] || 'Active';
+        const month = normalizeMonth(row['Month']);
         const remark = row['Remark'] || row['REMARK'] || '';
         const trfReport = row['TRF AND REPORTS'] || row['TRF AND REPORT'] || row['TRF and Reports'] || '';
         const hasHistory = trfReport && trfReport.toString().trim().length > 0 && trfReport.toString().toLowerCase() !== 'nan';
@@ -215,7 +258,8 @@ function populateSidebar() {
     const nav = document.getElementById('sidebar-months');
     if (!nav) return;
     
-    const months = [...new Set(state.data.map(item => item.month))].filter(Boolean).sort((a, b) => b.localeCompare(a));
+    const rawMonths = [...new Set(state.data.map(item => item.month))].filter(Boolean);
+    const sortedMonths = rawMonths.sort((a, b) => getMonthSortValue(b) - getMonthSortValue(a));
     
     nav.innerHTML = '<div class="nav-label">Global View</div>';
     
@@ -228,7 +272,7 @@ function populateSidebar() {
     
     nav.innerHTML += '<div class="nav-label">By Month</div>';
     
-    months.forEach(m => {
+    sortedMonths.forEach(m => {
         const item = document.createElement('div');
         item.className = 'nav-item';
         item.dataset.month = m;
@@ -249,7 +293,6 @@ function selectMonth(m, el) {
 }
 
 function populateFilters() {
-    // We now filter by Category OR specific test name if they want, but let's stick to Categories for a cleaner list
     const categories = [...new Set(state.data.map(item => item.testCategory))].filter(Boolean).sort();
     const tSelect = document.getElementById('test-filter');
 
@@ -413,7 +456,7 @@ function openSidePanel(index) {
     
     document.getElementById('d-name').textContent = item.sampleName;
     document.getElementById('d-id').textContent = item.andersonId;
-    document.getElementById('d-test').textContent = item.testName; // Show FULL name here
+    document.getElementById('d-test').textContent = item.testName;
     document.getElementById('d-month').textContent = item.month;
     document.getElementById('d-client').textContent = item.client;
     document.getElementById('d-trf').textContent = item.trfReport || 'No TRF information found.';
@@ -436,7 +479,7 @@ function showLoading(show) {
             btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> <span>Syncing...</span>';
             btn.disabled = true;
         } else {
-            btn.innerHTML = '<i data-lucide="refresh-cw"></i> <span>Refresh Live Data</span>';
+            btn.innerHTML = '<i data-lucide="refresh-cw"></i> <span>Refresh Data</span>';
             btn.disabled = false;
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
