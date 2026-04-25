@@ -169,7 +169,6 @@ async function loadData(forceRefresh = false, silent = false) {
 
         populateSidebar();
         populateFilters();
-        updateStats();
         applyFilters();
 
         if (forceRefresh && !silent) showToast('Database Synced Successfully.');
@@ -404,6 +403,7 @@ function applyFilters() {
         return matchesSearch && matchesMonth && matchesTest && matchesStatus;
     });
     renderGrid();
+    updateStats();
 }
 
 function renderGrid() {
