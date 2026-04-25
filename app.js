@@ -218,7 +218,7 @@ function normalizeMonth(m) {
 }
 
 function getMonthSortValue(m) {
-    if (m === 'ACTIVE') return 999999;
+    if (m === 'ACTIVE') return -1;
     const parts = m.split(' ');
     if (parts.length !== 2) return 0;
     const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
