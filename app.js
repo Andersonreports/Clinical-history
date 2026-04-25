@@ -165,7 +165,7 @@ async function loadData(forceRefresh = false, silent = false) {
             }
         }
         
-        state.data = normalizeData(rawData);
+        state.data = normalizeData(rawData).sort((a, b) => getMonthSortValue(b.month) - getMonthSortValue(a.month));
         
         populateSidebar();
         populateFilters();
