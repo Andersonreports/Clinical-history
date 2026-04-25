@@ -364,8 +364,8 @@ function populateFilters() {
 }
 
 function updateStats() {
-    const total = state.data.length;
-    const complete = state.data.filter(i => i.hasHistory).length;
+    const total = state.filteredData.length;
+    const complete = state.filteredData.filter(i => i.hasHistory).length;
     const pending = total - complete;
     const sTotal = document.getElementById('stat-total');
     const sComplete = document.getElementById('stat-complete');
