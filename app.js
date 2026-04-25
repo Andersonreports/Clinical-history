@@ -370,9 +370,9 @@ function updateStats() {
     const sTotal = document.getElementById('stat-total');
     const sComplete = document.getElementById('stat-complete');
     const sPending = document.getElementById('stat-pending');
-    if (sTotal) sTotal.textContent = total.toLocaleString();
-    if (sComplete) sComplete.textContent = complete.toLocaleString();
-    if (sPending) sPending.textContent = pending.toLocaleString();
+    if (sTotal) sTotal.textContent = total;
+    if (sComplete) sComplete.textContent = complete;
+    if (sPending) sPending.textContent = pending;
 }
 
 function handleSearch(e) {
