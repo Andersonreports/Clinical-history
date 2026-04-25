@@ -303,12 +303,16 @@ function normalizeData(data) {
         const history = row['Clinical History writeup'] || row['CLINICAL HISTORY WRITEUP'] || '';
         const month = normalizeMonth(row['Month']);
 
-        // Robust header detection
+        // Aggressive header detection (strips spaces and special chars)
         const getVal = (patterns) => {
             const keys = Object.keys(row);
-            for (const p of patterns) {
-                const foundKey = keys.find(k => k.trim().toUpperCase() === p.toUpperCase());
-                if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null) return row[foundKey];
+            const cleanPatterns = patterns.map(p => p.replace(/[^A-Z]/gi, '').toUpperCase());
+            for (const key of keys) {
+                const cleanKey = key.replace(/[^A-Z]/gi, '').toUpperCase();
+                if (cleanPatterns.includes(cleanKey)) {
+                    const val = row[key];
+                    if (val !== undefined && val !== null && val.toString().trim() !== '') return val;
+                }
             }
             return '-';
         };
