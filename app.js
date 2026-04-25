@@ -47,7 +47,7 @@ function initEventListeners() {
 
     // Sidebar All Records Button
     const sidebarAll = document.getElementById('sidebar-all-records');
-    if (sidebarAll) sidebarAll.onclick = () => restoreAllRecords();
+    if (sidebarAll) sidebarAll.onclick = () => selectMonth('all', sidebarAll);
 
     // Interactive Dashboard Cards (Primary Status Filters)
     const btnTotal = document.getElementById('btn-stat-total');
@@ -166,12 +166,11 @@ async function loadData(forceRefresh = false, silent = false) {
         }
         
         state.data = normalizeData(rawData);
-        state.filteredData = [...state.data];
         
         populateSidebar();
         populateFilters();
         updateStats();
-        renderGrid();
+        applyFilters();
         
         if (forceRefresh && !silent) showToast('Database Synced Successfully.');
     } catch (error) {
@@ -279,7 +278,11 @@ function populateSidebar() {
     const rawMonths = [...new Set(state.data.map(item => item.month))].filter(Boolean);
     const sortedMonths = rawMonths.sort((a, b) => getMonthSortValue(b) - getMonthSortValue(a));
     
-    nav.innerHTML += '<div class="nav-label">By Month</div>';
+    const byMonthLabel = document.createElement('div');
+    byMonthLabel.className = 'nav-label';
+    byMonthLabel.textContent = 'By Month';
+    nav.appendChild(byMonthLabel);
+
     sortedMonths.forEach(m => {
         const item = document.createElement('div');
         item.className = `nav-item ${state.filters.month === m ? 'active' : ''}`;
@@ -356,6 +359,12 @@ function applyFilters() {
 function renderGrid() {
     const body = document.getElementById('grid-body');
     if (!body) return;
+    
+    const totalPages = Math.ceil(state.filteredData.length / state.itemsPerPage);
+    if (state.currentPage > totalPages && totalPages > 0) {
+        state.currentPage = totalPages;
+    }
+
     body.innerHTML = '';
     const start = (state.currentPage - 1) * state.itemsPerPage;
     const end = Math.min(start + state.itemsPerPage, state.filteredData.length);
