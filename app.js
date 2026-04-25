@@ -51,17 +51,18 @@ function initEventListeners() {
     });
 
     // Bento Card Interactions
-    document.getElementById('btn-stat-total').onclick = () => {
-        resetUIFilters();
-        applyFilters();
-    };
-    document.getElementById('btn-stat-complete').onclick = () => {
+    const btnTotal = document.getElementById('btn-stat-total');
+    const btnComplete = document.getElementById('btn-stat-complete');
+    const btnPending = document.getElementById('btn-stat-pending');
+
+    if (btnTotal) btnTotal.onclick = () => { resetUIFilters(); applyFilters(); };
+    if (btnComplete) btnComplete.onclick = () => {
         resetUIFilters();
         state.filters.status = 'available';
         document.querySelector('.pill[data-filter="available"]').classList.add('active');
         applyFilters();
     };
-    document.getElementById('btn-stat-pending').onclick = () => {
+    if (btnPending) btnPending.onclick = () => {
         resetUIFilters();
         state.filters.status = 'needed';
         document.querySelector('.pill[data-filter="needed"]').classList.add('active');
@@ -104,12 +105,18 @@ function initEventListeners() {
 function resetUIFilters() {
     state.filters = { month: 'all', test: 'all', status: 'all' };
     state.searchQuery = '';
-    document.getElementById('main-search').value = '';
-    document.getElementById('test-filter').value = 'all';
+    const sInput = document.getElementById('main-search');
+    if (sInput) sInput.value = '';
+    const tFilter = document.getElementById('test-filter');
+    if (tFilter) tFilter.value = 'all';
+    
     document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-    document.querySelector('.pill[data-filter="all"]').classList.add('active');
+    const allPill = document.querySelector('.pill[data-filter="all"]');
+    if (allPill) allPill.classList.add('active');
+    
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelector('.nav-item[data-month="all"]').classList.add('active');
+    const allNavItem = document.querySelector('.nav-item[data-month="all"]');
+    if (allNavItem) allNavItem.classList.add('active');
 }
 
 async function loadData(forceRefresh = false) {
@@ -140,7 +147,7 @@ async function loadData(forceRefresh = false) {
         updateStats();
         renderGrid();
         
-        if (forceRefresh) showToast('Sync Complete: Fetched all monthly records.');
+        if (forceRefresh) showToast('Sync Complete: Normalized all test records.');
     } catch (error) {
         console.error('Data Sync Error:', error);
         showToast('Connection failed. Please check Apps Script deployment.', 'error');
@@ -166,12 +173,30 @@ async function fetchFromSyncSource() {
     }
 }
 
+function normalizeTestName(name) {
+    if (!name) return 'Unknown Test';
+    const n = name.toString().toUpperCase().trim();
+    
+    if (n.includes('WES') || n.includes('EXOME') || n.includes('SEQUENCING')) return 'WES';
+    if (n.includes('CMA') || n.includes('ARRAY') || n.includes('MICROARRAY')) return 'CMA';
+    if (n.includes('KARYOTYPE') || n.includes('BANDING')) return 'KARYOTYPE';
+    if (n.includes('NIPT') || n.includes('NIPS') || n.includes('NON INVASIVE')) return 'NIPT';
+    if (n.includes('NGS') || n.includes('PANEL') || n.includes('FOCUS')) return 'GENE PANEL';
+    if (n.includes('QF') || n.includes('PCR')) return 'QF-PCR';
+    if (n.includes('SANGER')) return 'SANGER';
+    if (n.includes('FRAGILE')) return 'FRAGILE X';
+    if (n.includes('SMA')) return 'SMA';
+    
+    return name.toString().split(' ')[0].substring(0, 20); // Fallback to first word
+}
+
 function normalizeData(data) {
     if (!Array.isArray(data)) return [];
     return data.filter(row => row && (row['Sample Name'] || row['Anderson ID'] || row['SAMPLE NAME'] || row['ANDERSON ID'])).map(row => {
         const sampleName = row['Sample Name'] || row['SAMPLE NAME'] || 'N/A';
         const andersonId = row['Anderson ID'] || row['ANDERSON ID'] || 'N/A';
-        const testName = row['Test Name'] || row['TEST NAME'] || 'Unknown Test';
+        const rawTestName = row['Test Name'] || row['TEST NAME'] || 'Unknown Test';
+        const testName = normalizeTestName(rawTestName);
         const client = row['Client'] || row['Client '] || row['CLIENT'] || '-';
         const history = row['Clinical History writeup'] || row['CLINICAL HISTORY WRITEUP'] || '';
         const month = row['Month'] || 'Active';
@@ -180,7 +205,7 @@ function normalizeData(data) {
         const hasHistory = trfReport && trfReport.toString().trim().length > 0 && trfReport.toString().toLowerCase() !== 'nan';
 
         return {
-            sampleName, andersonId, testName, client, history, trfReport, month, remark, hasHistory
+            sampleName, andersonId, testName, rawTestName, client, history, trfReport, month, remark, hasHistory
         };
     });
 }
@@ -229,7 +254,7 @@ function populateFilters() {
     if (tSelect) {
         const current = tSelect.value;
         tSelect.innerHTML = '<option value="all">Filter by Test Category</option>';
-        tests.forEach(t => { tSelect.innerHTML += `<option value="${t}">${t.substring(0, 30)}</option>`; });
+        tests.forEach(t => { tSelect.innerHTML += `<option value="${t}">${t}</option>`; });
         tSelect.value = current || 'all';
     }
 }
@@ -246,8 +271,10 @@ function updateStats() {
     const completePercent = total > 0 ? (complete / total) * 100 : 0;
     const pendingPercent = total > 0 ? (pending / total) * 100 : 0;
     
-    document.getElementById('stat-complete-bar').style.width = `${completePercent}%`;
-    document.getElementById('stat-pending-bar').style.width = `${pendingPercent}%`;
+    const cBar = document.getElementById('stat-complete-bar');
+    const pBar = document.getElementById('stat-pending-bar');
+    if (cBar) cBar.style.width = `${completePercent}%`;
+    if (pBar) pBar.style.width = `${pendingPercent}%`;
 }
 
 function handleSearch(e) {
@@ -257,7 +284,8 @@ function handleSearch(e) {
 }
 
 function handleFilterChange() {
-    state.filters.test = document.getElementById('test-filter').value;
+    const tFilter = document.getElementById('test-filter');
+    if (tFilter) state.filters.test = tFilter.value;
     state.currentPage = 1;
     applyFilters();
 }
@@ -332,7 +360,9 @@ function renderGrid() {
         body.appendChild(tr);
     });
 
-    document.getElementById('pagination-info').textContent = `Displaying ${start + 1}-${end} of ${state.filteredData.length} records`;
+    const infoEl = document.getElementById('pagination-info');
+    if (infoEl) infoEl.textContent = `Displaying ${start + 1}-${end} of ${state.filteredData.length} records`;
+    
     renderPagination(state.filteredData.length);
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
@@ -376,7 +406,7 @@ function openSidePanel(index) {
     
     document.getElementById('d-name').textContent = item.sampleName;
     document.getElementById('d-id').textContent = item.andersonId;
-    document.getElementById('d-test').textContent = item.testName;
+    document.getElementById('d-test').textContent = item.rawTestName || item.testName; // Show raw test name here
     document.getElementById('d-month').textContent = item.month;
     document.getElementById('d-client').textContent = item.client;
     document.getElementById('d-trf').textContent = item.trfReport || 'No TRF information found.';
