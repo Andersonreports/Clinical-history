@@ -4,116 +4,168 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clinical History Tracker | Anderson Reports</title>
-    <link rel="stylesheet" href="style.css?v=1.2">
+    <link rel="stylesheet" href="style.css?v=1.3">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
 </head>
 <body class="grid-workspace">
     <div class="app-container">
-        <!-- Top Toolbar -->
-        <header class="app-toolbar">
-            <div class="toolbar-left">
-                <h1 class="app-title">Clinical History Tracker</h1>
-                <div class="app-stats">
-                    <div class="stat-item"><span class="val" id="stat-total">0</span> <span class="lbl">Total</span></div>
-                    <div class="stat-item success"><span class="val" id="stat-complete">0</span> <span class="lbl">History OK</span></div>
-                    <div class="stat-item error"><span class="val" id="stat-pending">0</span> <span class="lbl">Missing</span></div>
+        <!-- Dashboard Header -->
+        <header class="app-header">
+            <div class="header-main">
+                <div class="brand">
+                    <i data-lucide="activity" class="brand-icon"></i>
+                    <div class="brand-text">
+                        <h1>Clinical History Tracker</h1>
+                        <span>Laboratory Operations Dashboard</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button id="sync-btn" class="btn-sync">
+                        <i data-lucide="refresh-cw"></i>
+                        <span>Sync Live Data</span>
+                    </button>
                 </div>
             </div>
-            <div class="toolbar-right">
-                <button id="sync-btn" class="btn btn-primary">
-                    <i data-lucide="refresh-cw"></i>
-                    <span>Sync Live Data</span>
-                </button>
+
+            <!-- Enlarged Count Buttons -->
+            <div class="dashboard-stats">
+                <div class="stat-card total" id="btn-stat-total">
+                    <div class="stat-icon"><i data-lucide="layers"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val" id="stat-total">0</span>
+                        <span class="stat-label">Total Records</span>
+                    </div>
+                </div>
+                <div class="stat-card success" id="btn-stat-complete">
+                    <div class="stat-icon"><i data-lucide="check-square"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val" id="stat-complete">0</span>
+                        <span class="stat-label">History Available</span>
+                    </div>
+                </div>
+                <div class="stat-card danger" id="btn-stat-pending">
+                    <div class="stat-icon"><i data-lucide="alert-triangle"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-val" id="stat-pending">0</span>
+                        <span class="stat-label">History Missing</span>
+                    </div>
+                </div>
             </div>
         </header>
 
-        <!-- Filter Bar -->
-        <section class="filter-bar">
-            <div class="search-group">
+        <!-- Filter Toolbar -->
+        <section class="toolbar">
+            <div class="toolbar-search">
                 <i data-lucide="search"></i>
-                <input type="text" id="main-search" placeholder="Quick search patient, ID, or test...">
+                <input type="text" id="main-search" placeholder="Search patient name, ID, or client...">
             </div>
-            <div class="filter-group">
-                <select id="month-filter">
-                    <option value="all">All Months</option>
-                </select>
-                <select id="status-filter">
-                    <option value="all">All Status</option>
-                    <option value="needed">History Missing</option>
-                    <option value="available">History Available</option>
-                </select>
-                <select id="test-filter" style="max-width: 200px;">
-                    <option value="all">All Test Types</option>
-                </select>
+            <div class="toolbar-filters">
+                <div class="filter-item">
+                    <label>Month</label>
+                    <select id="month-filter">
+                        <option value="all">All Months</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>Test Type</label>
+                    <select id="test-filter">
+                        <option value="all">All Tests</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>Status</label>
+                    <select id="status-filter">
+                        <option value="all">All Status</option>
+                        <option value="needed">History Missing</option>
+                        <option value="available">History Available</option>
+                    </select>
+                </div>
+                <button id="clear-filters" class="btn-ghost" title="Clear All Filters">
+                    <i data-lucide="filter-x"></i>
+                </button>
             </div>
         </section>
 
-        <!-- Main Data Grid -->
-        <main class="grid-main">
-            <div class="table-scroll">
+        <!-- Main Grid Area -->
+        <main class="grid-container">
+            <div class="grid-wrapper">
                 <table id="main-grid">
                     <thead>
                         <tr>
-                            <th style="width: 250px;">Patient Name</th>
-                            <th style="width: 150px;">Anderson ID</th>
-                            <th style="width: 180px;">Test Type</th>
-                            <th style="width: 120px;">Month</th>
-                            <th style="width: 140px;">Status</th>
-                            <th style="width: 80px;">Actions</th>
+                            <th class="col-name">Patient Details</th>
+                            <th class="col-id">Anderson ID</th>
+                            <th class="col-test">Test Category</th>
+                            <th class="col-month">Month</th>
+                            <th class="col-status">Clinical Status</th>
+                            <th class="col-action">Action</th>
                         </tr>
                     </thead>
                     <tbody id="grid-body">
-                        <!-- Data rows -->
+                        <!-- Rows -->
                     </tbody>
                 </table>
             </div>
             
             <div class="grid-footer">
-                <div class="pagination-info" id="pagination-info">Showing 0-0 of 0</div>
-                <div class="pagination-controls" id="pagination">
-                    <!-- Pagination buttons -->
-                </div>
+                <div id="pagination-info" class="pg-info">Showing 0-0 of 0</div>
+                <div id="pagination" class="pg-controls"></div>
             </div>
         </main>
 
-        <!-- Detail Side Panel (Overlay) -->
+        <!-- Slide Panel -->
         <div id="side-panel" class="side-panel">
             <div class="panel-header">
-                <h2>Case Details</h2>
-                <button id="close-panel" class="btn-icon"><i data-lucide="x"></i></button>
+                <div class="panel-title">
+                    <i data-lucide="file-text"></i>
+                    <h2>Case Examination</h2>
+                </div>
+                <button id="close-panel" class="btn-close"><i data-lucide="x"></i></button>
             </div>
-            <div class="panel-body">
-                <div class="detail-section patient-card">
+            <div class="panel-content">
+                <div class="p-section patient-header">
                     <h3 id="d-name">Patient Name</h3>
-                    <span id="d-id" class="id-tag">AND000</span>
-                </div>
-
-                <div class="detail-section">
-                    <div class="detail-grid">
-                        <div class="d-item"><label>Test</label><p id="d-test">-</p></div>
-                        <div class="d-item"><label>Month</label><p id="d-month">-</p></div>
-                        <div class="d-item full"><label>Client</label><p id="d-client">-</p></div>
+                    <div class="p-badges">
+                        <span id="d-id" class="badge-id">AND000</span>
+                        <span id="d-status-pill" class="badge-status">Status</span>
                     </div>
                 </div>
 
-                <div class="detail-section trf-section">
-                    <label>TRF & Reports Status</label>
-                    <div id="d-trf" class="trf-status-box">-</div>
+                <div class="p-section info-grid">
+                    <div class="info-box">
+                        <label>Test Method</label>
+                        <p id="d-test">-</p>
+                    </div>
+                    <div class="info-box">
+                        <label>Registry Month</label>
+                        <p id="d-month">-</p>
+                    </div>
+                    <div class="info-box full">
+                        <label>Referring Client</label>
+                        <p id="d-client">-</p>
+                    </div>
                 </div>
 
-                <div class="detail-section history-section">
-                    <div class="label-row">
+                <div class="p-section trf-box">
+                    <label>TRF / Reporting Context</label>
+                    <div id="d-trf" class="trf-content">-</div>
+                </div>
+
+                <div class="p-section history-box">
+                    <div class="history-header">
                         <label>Clinical History Writeup</label>
-                        <button id="copy-btn" class="btn btn-sm">Copy</button>
+                        <button id="copy-btn" class="btn-copy">
+                            <i data-lucide="copy"></i>
+                            <span>Copy Text</span>
+                        </button>
                     </div>
-                    <div id="d-history" class="history-display">-</div>
+                    <div id="d-history" class="history-content">-</div>
                 </div>
 
-                <div class="detail-section">
+                <div class="p-section">
                     <label>Registry Remarks</label>
                     <p id="d-remark" class="remark-text">-</p>
                 </div>
@@ -123,6 +175,6 @@
     </div>
 
     <div id="toast" class="toast"></div>
-    <script src="app.js?v=1.2"></script>
+    <script src="app.js?v=1.3"></script>
 </body>
 </html>

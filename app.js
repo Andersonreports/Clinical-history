@@ -13,7 +13,7 @@ let state = {
         status: 'all'
     },
     currentPage: 1,
-    itemsPerPage: 50, // Higher density for grid
+    itemsPerPage: 50,
     selectedIndex: -1
 };
 
@@ -40,11 +40,36 @@ function initEventListeners() {
     const syncBtn = document.getElementById('sync-btn');
     if (syncBtn) syncBtn.addEventListener('click', syncData);
 
+    const clearBtn = document.getElementById('clear-filters');
+    if (clearBtn) clearBtn.addEventListener('click', () => {
+        resetFilters();
+        applyFilters();
+    });
+
     const closePanel = document.getElementById('close-panel');
     const overlay = document.getElementById('panel-overlay');
     if (closePanel) closePanel.onclick = closeSidePanel;
     if (overlay) overlay.onclick = closeSidePanel;
     
+    // Interactive Stats (Large Cards)
+    const btnTotal = document.getElementById('btn-stat-total');
+    const btnComplete = document.getElementById('btn-stat-complete');
+    const btnPending = document.getElementById('btn-stat-pending');
+
+    if (btnTotal) btnTotal.onclick = () => { resetFilters(); applyFilters(); };
+    if (btnComplete) btnComplete.onclick = () => {
+        resetFilters();
+        state.filters.status = 'available';
+        document.getElementById('status-filter').value = 'available';
+        applyFilters();
+    };
+    if (btnPending) btnPending.onclick = () => {
+        resetFilters();
+        state.filters.status = 'needed';
+        document.getElementById('status-filter').value = 'needed';
+        applyFilters();
+    };
+
     // Global Shortcut
     document.addEventListener('keydown', (e) => {
         if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
@@ -62,11 +87,29 @@ function initEventListeners() {
             if (historyEl) {
                 const text = historyEl.innerText;
                 navigator.clipboard.writeText(text).then(() => {
+                    const originalHTML = copyBtn.innerHTML;
+                    copyBtn.innerHTML = '<i data-lucide="check"></i><span>Copied!</span>';
+                    copyBtn.classList.add('btn-success-anim');
                     showToast('History copied to clipboard');
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalHTML;
+                        copyBtn.classList.remove('btn-success-anim');
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    }, 2000);
                 });
             }
         });
     }
+}
+
+function resetFilters() {
+    state.filters = { month: 'all', test: 'all', status: 'all' };
+    state.searchQuery = '';
+    document.getElementById('month-filter').value = 'all';
+    document.getElementById('test-filter').value = 'all';
+    document.getElementById('status-filter').value = 'all';
+    document.getElementById('main-search').value = '';
 }
 
 async function loadData(forceRefresh = false) {
@@ -96,10 +139,10 @@ async function loadData(forceRefresh = false) {
         updateStats();
         renderGrid();
         
-        if (forceRefresh) showToast('Grid data synchronized');
+        if (forceRefresh) showToast('Grid data synchronized across all sheets');
     } catch (error) {
         console.error('Data Sync Error:', error);
-        showToast('Sync failed. Check Apps Script URL.', 'error');
+        showToast('Sync failed. Please check Apps Script deployment.', 'error');
     } finally {
         showLoading(false);
     }
@@ -157,7 +200,7 @@ function populateFilters() {
 
     if (tSelect) {
         const current = tSelect.value;
-        tSelect.innerHTML = '<option value="all">All Test Types</option>';
+        tSelect.innerHTML = '<option value="all">All Tests</option>';
         tests.forEach(t => { tSelect.innerHTML += `<option value="${t}">${t.substring(0, 30)}</option>`; });
         tSelect.value = current || 'all';
     }
@@ -219,7 +262,8 @@ function renderGrid() {
     const pageData = state.filteredData.slice(start, end);
 
     if (pageData.length === 0) {
-        body.innerHTML = '<tr><td colspan="6" style="padding: 100px; text-align:center; color: var(--text-muted);">No records found matching filters</td></tr>';
+        body.innerHTML = '<tr><td colspan="6" style="padding: 80px; text-align:center; color: var(--text-muted);"><i data-lucide="search-x" style="width:48px; height:48px; display:block; margin:0 auto 10px; opacity:0.3;"></i>No matching records found</td></tr>';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
         renderPagination(0);
         return;
     }
@@ -227,20 +271,27 @@ function renderGrid() {
     pageData.forEach((item, index) => {
         const absoluteIndex = start + index;
         const tr = document.createElement('tr');
+        tr.className = state.selectedIndex === absoluteIndex ? 'active-row' : '';
         tr.onclick = () => openSidePanel(absoluteIndex);
         
         tr.innerHTML = `
-            <td><div style="font-weight: 600;">${item.sampleName}</div></td>
-            <td><code style="font-size: 11px;">${item.andersonId}</code></td>
-            <td>${item.testName}</td>
+            <td>
+                <div class="patient-name-cell">
+                    <span class="name">${item.sampleName}</span>
+                    <span class="client-mini">${item.client.substring(0, 50)}</span>
+                </div>
+            </td>
+            <td><code class="grid-id">${item.andersonId}</code></td>
+            <td><span class="test-badge">${item.testName}</span></td>
             <td>${item.month}</td>
             <td>
                 <span class="status-badge ${item.hasHistory ? 'available' : 'missing'}">
+                    <i data-lucide="${item.hasHistory ? 'check' : 'alert-circle'}"></i>
                     ${item.hasHistory ? 'History OK' : 'Missing'}
                 </span>
             </td>
             <td>
-                <button class="btn btn-sm" style="padding: 2px 8px; font-size: 10px;">VIEW</button>
+                <button class="btn-icon-view"><i data-lucide="chevron-right"></i></button>
             </td>
         `;
         body.appendChild(tr);
@@ -248,6 +299,7 @@ function renderGrid() {
 
     document.getElementById('pagination-info').textContent = `Showing ${start + 1}-${end} of ${state.filteredData.length}`;
     renderPagination(state.filteredData.length);
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function renderPagination(totalItems) {
@@ -284,6 +336,7 @@ function renderPagination(totalItems) {
 }
 
 function openSidePanel(index) {
+    state.selectedIndex = index;
     const item = state.filteredData[index];
     if (!item) return;
     
@@ -293,16 +346,24 @@ function openSidePanel(index) {
     document.getElementById('d-month').textContent = item.month;
     document.getElementById('d-client').textContent = item.client;
     document.getElementById('d-trf').textContent = item.trfReport || 'No TRF information available.';
-    document.getElementById('d-history').textContent = item.history || 'NO HISTORY WRITTEN';
-    document.getElementById('d-remark').textContent = item.remark || 'No remarks.';
+    document.getElementById('d-history').textContent = item.history || 'NO CLINICAL WRITEUP AVAILABLE';
+    document.getElementById('d-remark').textContent = item.remark || 'N/A';
     
+    const pill = document.getElementById('d-status-pill');
+    pill.textContent = item.hasHistory ? 'History OK' : 'Missing';
+    pill.className = `badge-status ${item.hasHistory ? 'available' : 'missing'}`;
+
     document.getElementById('side-panel').classList.add('open');
     document.getElementById('panel-overlay').classList.add('active');
+    
+    renderGrid();
 }
 
 function closeSidePanel() {
+    state.selectedIndex = -1;
     document.getElementById('side-panel').classList.remove('open');
     document.getElementById('panel-overlay').classList.remove('active');
+    renderGrid();
 }
 
 function showLoading(show) {
