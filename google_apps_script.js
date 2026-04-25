@@ -21,7 +21,11 @@ function doGet() {
 
     sheets.forEach(function(sheet) {
       var sheetName = sheet.getName();
-      var range = sheet.getDataRange();
+      var lastRow = sheet.getLastRow();
+      var lastCol = sheet.getLastColumn();
+      if (lastRow < 2 || lastCol < 1) return; // Skip empty sheets
+
+      var range = sheet.getRange(1, 1, lastRow, lastCol);
       var values = range.getValues();
 
       if (values.length < 2) return; // Skip empty sheets
