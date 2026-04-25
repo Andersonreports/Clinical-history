@@ -1,6 +1,6 @@
 // Clinical History Tracker - Clinical OS Logic
 
-const SYNC_URL = 'https://script.google.com/macros/s/AKfycbxXXafajUy5_1komoDIFidxrLuehfHVUUTZRlZnfeeTEI68GElYdvJGOvVI16gLPmhmZg/exec';
+const SYNC_URL = 'https://docs.google.com/spreadsheets/d/1kaZn-xNyskSrwq41Y0UCzlevb5TVjKyAYcdpnJuxxoE/edit?gid=1779960625#gid=1779960625';
 const LOCAL_DATA_PATH = 'data.json';
 const AUTO_SYNC_INTERVAL = 30000; // 30 seconds
 
@@ -252,7 +252,7 @@ function getTestCategory(name, sampleName = '') {
 
 function calculateTAT(receivedDate, category) {
     if (!receivedDate || receivedDate === '-' || receivedDate.toString().toLowerCase() === 'nan') return '-';
-    
+
     let date;
     const str = receivedDate.toString();
 
@@ -265,7 +265,7 @@ function calculateTAT(receivedDate, category) {
         // Parse formats: DD-MM-YYYY or DD/MM/YYYY
         const parts = str.split(/[-/]/);
         if (parts.length !== 3) return '-';
-        
+
         let day = parseInt(parts[0]);
         let month = parseInt(parts[1]) - 1; // 0-indexed
         let year = parseInt(parts[2]);
@@ -274,21 +274,21 @@ function calculateTAT(receivedDate, category) {
     }
 
     if (!date || isNaN(date.getTime())) return '-';
-    
+
     let daysToAdd = 28; // Default for remaining tests
     if (category === 'FEMALE INFERTILITY' || category === 'MALE INFERTILITY') {
         daysToAdd = 15;
     } else if (category === 'AF') {
         daysToAdd = 20;
     }
-    
+
     date.setDate(date.getDate() + daysToAdd);
-    
+
     // Format back to DD-MM-YYYY
     const d = date.getDate().toString().padStart(2, '0');
     const m = (date.getMonth() + 1).toString().padStart(2, '0');
     const y = date.getFullYear();
-    
+
     return `${d}-${m}-${y}`;
 }
 
@@ -302,7 +302,7 @@ function normalizeData(data) {
         const client = row['Client'] || row['Client '] || row['CLIENT'] || '-';
         const history = row['Clinical History writeup'] || row['CLINICAL HISTORY WRITEUP'] || '';
         const month = normalizeMonth(row['Month']);
-        
+
         // Robust header detection
         const getVal = (patterns) => {
             const keys = Object.keys(row);
@@ -326,7 +326,7 @@ function normalizeData(data) {
                 receivedDate = `${dd}-${mm}-${yyyy}`;
             }
         }
-        
+
         // Auto-calculate TAT date if Received Date is present
         let tatDate = getVal(['TAT Date', 'TAT DATE', 'TAT date', 'TAT']);
         if (!tatDate || tatDate === '-' || tatDate.toString().toLowerCase() === 'nan') {
