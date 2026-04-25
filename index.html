@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clinical History Tracker | Anderson Reports</title>
-    <link rel="stylesheet" href="style.css?v=1.8">
+    <link rel="stylesheet" href="style.css?v=1.9">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -12,61 +12,52 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
 </head>
 <body class="modern-os">
-    <!-- Top Center Title -->
+    <!-- Top Center Title Banner -->
     <div class="top-page-banner">
-        <h1>Clinical History Tracker</h1>
+        <div class="banner-content">
+            <h1>Clinical History Tracker</h1>
+            <button id="sync-btn" class="btn-sync-compact">
+                <i data-lucide="refresh-cw"></i>
+                <span id="sync-text">Refresh Data</span>
+            </button>
+        </div>
     </div>
 
     <div class="app-shell">
         <!-- Main Content (Left) -->
         <main class="app-main">
-            <!-- Global Header -->
-            <header class="global-header">
-                <div class="header-search">
-                    <i data-lucide="search"></i>
-                    <input type="text" id="main-search" placeholder="Search patient, ID, or clinical details...">
-                </div>
-                <div class="header-user">
-                    <button id="sync-btn" class="btn-sync-pro">
-                        <i data-lucide="refresh-cw"></i>
-                        <span id="sync-text">Refresh Data</span>
-                    </button>
-                </div>
-            </header>
-
-            <!-- Interactive Dashboard Stats (Primary Filters) -->
+            
+            <!-- Interactive Dashboard Stats (Primary View Selectors) -->
             <section class="dashboard-grid">
                 <div class="pro-card card-total active" id="btn-stat-total">
-                    <div class="card-body">
-                        <p>Total Records</p>
-                        <h2 id="stat-total">0</h2>
-                    </div>
+                    <p>Total Records</p>
+                    <h2 id="stat-total">0</h2>
                     <div class="active-indicator"></div>
                 </div>
                 <div class="pro-card card-success" id="btn-stat-complete">
-                    <div class="card-body">
-                        <p>History Available</p>
-                        <h2 id="stat-complete">0</h2>
-                    </div>
+                    <p>History Available</p>
+                    <h2 id="stat-complete">0</h2>
                     <div class="active-indicator"></div>
                 </div>
                 <div class="pro-card card-danger" id="btn-stat-pending">
-                    <div class="card-body">
-                        <p>History Required</p>
-                        <h2 id="stat-pending">0</h2>
-                    </div>
+                    <p>History Required</p>
+                    <h2 id="stat-pending">0</h2>
                     <div class="active-indicator"></div>
                 </div>
             </section>
 
-            <!-- Control Bar -->
-            <div class="control-bar">
-                <div class="filter-label-group">
-                    <span id="current-filter-name" class="current-filter-badge">All Records</span>
+            <!-- Compact Control Row (Search + Filters combined to save space) -->
+            <div class="control-row">
+                <div class="search-wrapper">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="main-search" placeholder="Search patient name, ID, or clinical details...">
                 </div>
-                <select id="test-filter" class="select-pro">
-                    <option value="all">All Test Categories</option>
-                </select>
+                <div class="filters-wrapper">
+                    <div class="filter-badge" id="current-filter-name">All Records</div>
+                    <select id="test-filter" class="select-minimal">
+                        <option value="all">All Test Categories</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Data Surface -->
@@ -97,26 +88,27 @@
         </main>
 
         <!-- Sidebar Navigation (Right) -->
-        <aside class="app-sidebar right-aligned">
+        <aside class="app-sidebar">
             <div class="sidebar-brand">
-                <i data-lucide="dna"></i>
+                <i data-lucide="activity"></i>
                 <span>Clinical OS</span>
             </div>
             <nav class="month-nav" id="sidebar-months">
                 <div class="nav-label">Global View</div>
-                <!-- Month links injected here -->
+                <div class="nav-item active" id="sidebar-all-records" data-month="all">
+                    <i data-lucide="globe"></i> <span>All Records</span>
+                </div>
+                <!-- Months injected here -->
             </nav>
         </aside>
 
-        <!-- Professional Case Panel -->
+        <!-- Side Panel -->
         <div id="side-panel" class="pro-panel">
             <div class="panel-blur"></div>
             <div class="panel-content">
                 <header class="panel-header">
                     <button id="close-panel" class="btn-back"><i data-lucide="arrow-left"></i> <span>Close Panel</span></button>
-                    <div class="panel-actions">
-                        <button id="copy-btn" class="btn-action-pro"><i data-lucide="copy"></i> Copy Writeup</button>
-                    </div>
+                    <button id="copy-btn" class="btn-action-pro"><i data-lucide="copy"></i> Copy Writeup</button>
                 </header>
 
                 <div class="panel-body">
@@ -129,32 +121,26 @@
                     </section>
 
                     <section class="case-details-enhanced">
-                        <div class="detail-row">
-                            <div class="detail-item">
-                                <label><i data-lucide="microscope"></i> Test Information</label>
-                                <p id="d-test">-</p>
-                            </div>
+                        <div class="detail-item">
+                            <label><i data-lucide="microscope"></i> Test Information</label>
+                            <p id="d-test">-</p>
                         </div>
-                        <div class="detail-row">
-                            <div class="detail-item">
-                                <label><i data-lucide="building"></i> Client Reference</label>
-                                <p id="d-client">-</p>
-                            </div>
+                        <div class="detail-item">
+                            <label><i data-lucide="building"></i> Client Reference</label>
+                            <p id="d-client">-</p>
                         </div>
                         
-                        <div class="detail-row-special trf-section">
+                        <div class="detail-row-special">
                             <label><i data-lucide="file-text"></i> TRF & Reporting Status</label>
                             <div id="d-trf" class="trf-content-box">-</div>
                         </div>
 
-                        <div class="detail-row-special history-section">
-                            <div class="label-with-action">
-                                <label><i data-lucide="align-left"></i> Clinical History Writeup</label>
-                            </div>
+                        <div class="detail-row-special">
+                            <label><i data-lucide="align-justify"></i> Clinical History Writeup</label>
                             <div id="d-history" class="history-content-box">-</div>
                         </div>
 
-                        <div class="detail-row-special remarks-section">
+                        <div class="detail-row-special">
                             <label><i data-lucide="message-circle"></i> Registry Remarks</label>
                             <p id="d-remark" class="remark-content">-</p>
                         </div>
@@ -166,6 +152,6 @@
     </div>
 
     <div id="toast" class="toast"></div>
-    <script src="app.js?v=1.8"></script>
+    <script src="app.js?v=1.9"></script>
 </body>
 </html>

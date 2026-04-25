@@ -45,17 +45,17 @@ function initEventListeners() {
     if (closePanel) closePanel.onclick = closeSidePanel;
     if (overlay) overlay.onclick = closeSidePanel;
 
+    // Sidebar All Records Button
+    const sidebarAll = document.getElementById('sidebar-all-records');
+    if (sidebarAll) sidebarAll.onclick = () => restoreAllRecords();
+
     // Interactive Dashboard Cards (Primary Status Filters)
     const btnTotal = document.getElementById('btn-stat-total');
     const btnComplete = document.getElementById('btn-stat-complete');
     const btnPending = document.getElementById('btn-stat-pending');
 
-    if (btnTotal) btnTotal.onclick = () => {
-        updateCardActiveState('all');
-        state.filters.status = 'all';
-        state.currentPage = 1;
-        applyFilters();
-    };
+    if (btnTotal) btnTotal.onclick = () => restoreAllRecords(); // Clicking Total resets EVERYTHING
+    
     if (btnComplete) btnComplete.onclick = () => {
         updateCardActiveState('available');
         state.filters.status = 'available';
@@ -102,40 +102,48 @@ function initEventListeners() {
     }
 }
 
-function updateCardActiveState(status) {
-    document.querySelectorAll('.pro-card').forEach(c => c.classList.remove('active'));
-    const badge = document.getElementById('current-filter-name');
-    
-    if (status === 'all') {
-        document.getElementById('btn-stat-total').classList.add('active');
-        if (badge) badge.textContent = 'All Records';
-    } else if (status === 'available') {
-        document.getElementById('btn-stat-complete').classList.add('active');
-        if (badge) badge.textContent = 'History Available';
-    } else if (status === 'needed') {
-        document.getElementById('btn-stat-pending').classList.add('active');
-        if (badge) badge.textContent = 'History Required';
-    }
-}
-
-function resetUIFilters() {
-    console.log('Resetting all UI filters...');
+// THE FIX: Universal Restore Function
+function restoreAllRecords() {
+    console.log('Restoring ALL records across ALL months...');
     state.filters = { month: 'all', test: 'all', status: 'all' };
     state.searchQuery = '';
     state.currentPage = 1;
 
+    // UI Updates
     const sInput = document.getElementById('main-search');
     if (sInput) sInput.value = '';
     
     const tFilter = document.getElementById('test-filter');
     if (tFilter) tFilter.value = 'all';
     
-    // Reset cards to "All"
     updateCardActiveState('all');
     
+    // Sidebar Active State
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    const allNavItem = document.querySelector('.nav-item[data-month="all"]');
-    if (allNavItem) allNavItem.classList.add('active');
+    const sidebarAll = document.getElementById('sidebar-all-records');
+    if (sidebarAll) sidebarAll.classList.add('active');
+
+    applyFilters();
+    showToast('Viewing All Records');
+}
+
+function updateCardActiveState(status) {
+    document.querySelectorAll('.pro-card').forEach(c => c.classList.remove('active'));
+    const badge = document.getElementById('current-filter-name');
+    
+    if (status === 'all') {
+        const c = document.getElementById('btn-stat-total');
+        if (c) c.classList.add('active');
+        if (badge) badge.textContent = 'All Records';
+    } else if (status === 'available') {
+        const c = document.getElementById('btn-stat-complete');
+        if (c) c.classList.add('active');
+        if (badge) badge.textContent = 'History Available';
+    } else if (status === 'needed') {
+        const c = document.getElementById('btn-stat-pending');
+        if (c) c.classList.add('active');
+        if (badge) badge.textContent = 'History Required';
+    }
 }
 
 async function loadData(forceRefresh = false, silent = false) {
@@ -168,7 +176,7 @@ async function loadData(forceRefresh = false, silent = false) {
         if (forceRefresh && !silent) showToast('Database Synced Successfully.');
     } catch (error) {
         console.error('Data Sync Error:', error);
-        if (!silent) showToast('Sync Failed. Check network connection.', 'error');
+        if (!silent) showToast('Sync Failed.', 'error');
     } finally {
         if (!silent) showLoading(false);
     }
@@ -260,20 +268,16 @@ function normalizeData(data) {
 function populateSidebar() {
     const nav = document.getElementById('sidebar-months');
     if (!nav) return;
+    
+    // Clear existing dynamic months (keep labels and All Records)
+    const labelView = nav.querySelector('.nav-label');
+    const allRecords = document.getElementById('sidebar-all-records');
+    nav.innerHTML = '';
+    if (labelView) nav.appendChild(labelView);
+    if (allRecords) nav.appendChild(allRecords);
+    
     const rawMonths = [...new Set(state.data.map(item => item.month))].filter(Boolean);
     const sortedMonths = rawMonths.sort((a, b) => getMonthSortValue(b) - getMonthSortValue(a));
-    nav.innerHTML = '<div class="nav-label">Global View</div>';
-    
-    const allItem = document.createElement('div');
-    allItem.className = `nav-item ${state.filters.month === 'all' ? 'active' : ''}`;
-    allItem.id = 'sidebar-all-records';
-    allItem.dataset.month = 'all';
-    allItem.innerHTML = '<i data-lucide="globe"></i> <span>All Records</span>';
-    allItem.onclick = () => {
-        resetUIFilters();
-        applyFilters();
-    };
-    nav.appendChild(allItem);
     
     nav.innerHTML += '<div class="nav-label">By Month</div>';
     sortedMonths.forEach(m => {
@@ -358,7 +362,7 @@ function renderGrid() {
     const pageData = state.filteredData.slice(start, end);
     if (pageData.length === 0) {
         body.innerHTML = `<tr><td colspan="6" style="padding: 100px; text-align:center; color: var(--text-dim);">
-            <i data-lucide="inbox" style="width:48px; height:48px; opacity:0.1; margin-bottom:15px;"></i>
+            <i data-lucide="inbox" style="width:40px; height:40px; opacity:0.1; margin-bottom:10px;"></i>
             <p style="font-weight:600;">No cases found in this view</p>
         </td></tr>`;
         if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -391,7 +395,7 @@ function renderGrid() {
                 </div>
             </td>
             <td style="text-align:right;">
-                <button class="btn-sync-pro" style="padding: 5px 12px; box-shadow:none; border:1px solid var(--border); font-size:11px;">DETAILS</button>
+                <button class="btn-sync-compact" style="padding: 4px 10px; font-size:10px;">DETAILS</button>
             </td>
         `;
         body.appendChild(tr);
