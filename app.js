@@ -44,38 +44,28 @@ function initEventListeners() {
     const overlay = document.getElementById('panel-overlay');
     if (closePanel) closePanel.onclick = closeSidePanel;
     if (overlay) overlay.onclick = closeSidePanel;
-    
-    // Pill Filters
-    document.querySelectorAll('.pill').forEach(pill => {
-        pill.onclick = () => {
-            document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-            pill.classList.add('active');
-            state.filters.status = pill.dataset.filter;
-            state.currentPage = 1;
-            applyFilters();
-        };
-    });
 
-    // Bento Card Interactions
+    // Interactive Dashboard Cards (Primary Status Filters)
     const btnTotal = document.getElementById('btn-stat-total');
     const btnComplete = document.getElementById('btn-stat-complete');
     const btnPending = document.getElementById('btn-stat-pending');
 
-    if (btnTotal) btnTotal.onclick = () => { resetUIFilters(); applyFilters(); };
+    if (btnTotal) btnTotal.onclick = () => {
+        updateCardActiveState('all');
+        state.filters.status = 'all';
+        state.currentPage = 1;
+        applyFilters();
+    };
     if (btnComplete) btnComplete.onclick = () => {
-        resetUIFilters();
+        updateCardActiveState('available');
         state.filters.status = 'available';
-        document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-        const avPill = document.querySelector('.pill[data-filter="available"]');
-        if (avPill) avPill.classList.add('active');
+        state.currentPage = 1;
         applyFilters();
     };
     if (btnPending) btnPending.onclick = () => {
-        resetUIFilters();
+        updateCardActiveState('needed');
         state.filters.status = 'needed';
-        document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-        const ndPill = document.querySelector('.pill[data-filter="needed"]');
-        if (ndPill) ndPill.classList.add('active');
+        state.currentPage = 1;
         applyFilters();
     };
 
@@ -112,6 +102,22 @@ function initEventListeners() {
     }
 }
 
+function updateCardActiveState(status) {
+    document.querySelectorAll('.pro-card').forEach(c => c.classList.remove('active'));
+    const badge = document.getElementById('current-filter-name');
+    
+    if (status === 'all') {
+        document.getElementById('btn-stat-total').classList.add('active');
+        if (badge) badge.textContent = 'All Records';
+    } else if (status === 'available') {
+        document.getElementById('btn-stat-complete').classList.add('active');
+        if (badge) badge.textContent = 'History Available';
+    } else if (status === 'needed') {
+        document.getElementById('btn-stat-pending').classList.add('active');
+        if (badge) badge.textContent = 'History Required';
+    }
+}
+
 function resetUIFilters() {
     console.log('Resetting all UI filters...');
     state.filters = { month: 'all', test: 'all', status: 'all' };
@@ -124,9 +130,8 @@ function resetUIFilters() {
     const tFilter = document.getElementById('test-filter');
     if (tFilter) tFilter.value = 'all';
     
-    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-    const allPill = document.querySelector('.pill[data-filter="all"]');
-    if (allPill) allPill.classList.add('active');
+    // Reset cards to "All"
+    updateCardActiveState('all');
     
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     const allNavItem = document.querySelector('.nav-item[data-month="all"]');

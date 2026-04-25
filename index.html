@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clinical History Tracker | Anderson Reports</title>
-    <link rel="stylesheet" href="style.css?v=1.7">
+    <link rel="stylesheet" href="style.css?v=1.8">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -34,37 +34,35 @@
                 </div>
             </header>
 
-            <!-- Compact Dashboard Stats -->
+            <!-- Interactive Dashboard Stats (Primary Filters) -->
             <section class="dashboard-grid">
-                <div class="pro-card card-total" id="btn-stat-total">
-                    <div class="card-icon-mini"><i data-lucide="database"></i></div>
+                <div class="pro-card card-total active" id="btn-stat-total">
                     <div class="card-body">
                         <p>Total Records</p>
                         <h2 id="stat-total">0</h2>
                     </div>
+                    <div class="active-indicator"></div>
                 </div>
                 <div class="pro-card card-success" id="btn-stat-complete">
-                    <div class="card-icon-mini"><i data-lucide="file-check-2"></i></div>
                     <div class="card-body">
                         <p>History Available</p>
                         <h2 id="stat-complete">0</h2>
                     </div>
+                    <div class="active-indicator"></div>
                 </div>
                 <div class="pro-card card-danger" id="btn-stat-pending">
-                    <div class="card-icon-mini"><i data-lucide="clipboard-list"></i></div>
                     <div class="card-body">
                         <p>History Required</p>
                         <h2 id="stat-pending">0</h2>
                     </div>
+                    <div class="active-indicator"></div>
                 </div>
             </section>
 
             <!-- Control Bar -->
             <div class="control-bar">
-                <div class="pill-filters">
-                    <button class="pill active" data-filter="all">All Cases</button>
-                    <button class="pill" data-filter="needed">Needs History</button>
-                    <button class="pill" data-filter="available">Completed</button>
+                <div class="filter-label-group">
+                    <span id="current-filter-name" class="current-filter-badge">All Records</span>
                 </div>
                 <select id="test-filter" class="select-pro">
                     <option value="all">All Test Categories</option>
@@ -168,6 +166,6 @@
     </div>
 
     <div id="toast" class="toast"></div>
-    <script src="app.js?v=1.7"></script>
+    <script src="app.js?v=1.8"></script>
 </body>
 </html>
