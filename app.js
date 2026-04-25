@@ -199,7 +199,7 @@ async function fetchFromSyncSource() {
 }
 
 function normalizeMonth(m) {
-    if (!m || m.toLowerCase().includes('sheet')) return 'ACTIVE';
+    if (!m || m.toLowerCase().includes('sheet')) return 'OLD';
     const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
     const fullMonths = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
     let str = m.toString().toUpperCase().replace(/\s+/g, '');
@@ -218,7 +218,7 @@ function normalizeMonth(m) {
 }
 
 function getMonthSortValue(m) {
-    if (m === 'ACTIVE') return -1;
+    if (m === 'OLD' || m === 'ACTIVE') return -1;
     const parts = m.split(' ');
     if (parts.length !== 2) return 0;
     const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
