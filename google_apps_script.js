@@ -68,12 +68,12 @@ function doGet() {
 
     return ContentService.createTextOutput(JSON.stringify(allRecords))
       .setMimeType(ContentService.MimeType.JSON)
-      .setHeader('Access-Control-Allow-Origin', '*');
+;
 
   } catch (e) {
     return ContentService.createTextOutput(JSON.stringify({ "error": e.toString() }))
       .setMimeType(ContentService.MimeType.JSON)
-      .setHeader('Access-Control-Allow-Origin', '*');
+;
   }
 }
 
@@ -105,12 +105,12 @@ function doPost(e) {
 
     return ContentService.createTextOutput(JSON.stringify({ success: true }))
       .setMimeType(ContentService.MimeType.JSON)
-      .setHeader('Access-Control-Allow-Origin', '*');
+;
 
   } catch (e) {
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: e.toString() }))
       .setMimeType(ContentService.MimeType.JSON)
-      .setHeader('Access-Control-Allow-Origin', '*');
+;
   }
 }
 
