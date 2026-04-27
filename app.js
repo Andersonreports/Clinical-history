@@ -170,7 +170,7 @@ async function loadData(forceRefresh = false, silent = false) {
         if (forceRefresh && !silent) showToast('Database Synced Successfully.');
     } catch (error) {
         console.error('Data Sync Error:', error);
-        if (!silent) showToast('Sync Failed.', 'error');
+        if (!silent) showToast(`Sync Failed: ${error.message}`, 'error');
     } finally {
         if (!silent) showLoading(false);
     }
@@ -179,8 +179,14 @@ async function loadData(forceRefresh = false, silent = false) {
 async function fetchFromSyncSource() {
     if (SYNC_URL.includes('script.google.com')) {
         const response = await fetch(SYNC_URL);
-        if (!response.ok) throw new Error('Apps Script unreachable');
-        return await response.json();
+        if (!response.ok) throw new Error(`Apps Script returned HTTP ${response.status}`);
+        const text = await response.text();
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            console.error('Non-JSON response from Apps Script:', text.substring(0, 300));
+            throw new Error('Apps Script returned non-JSON — set deployment access to "Anyone"');
+        }
     } else {
         return new Promise((resolve, reject) => {
             Papa.parse(SYNC_URL, {
