@@ -114,6 +114,35 @@ function doPost(e) {
   }
 }
 
+// Run this once manually to grant Gmail permission before the trigger runs
+function authorizeGmail() {
+  GmailApp.sendEmail(Session.getActiveUser().getEmail(), "Anderson Lab Script — Authorization Test", "Gmail permission granted successfully.");
+  Logger.log("✅ Gmail authorization complete.");
+}
+
+// Calculates TAT date from received date based on test name (mirrors frontend logic)
+function calculateTATDateFromReceived(receivedVal, testName) {
+  var date;
+  if (receivedVal instanceof Date && !isNaN(receivedVal)) {
+    date = new Date(receivedVal);
+  } else if (receivedVal && receivedVal.toString().trim() !== "") {
+    var str   = receivedVal.toString().trim();
+    var parts = str.includes("/") ? str.split("/") : str.split("-");
+    if (parts.length === 3) {
+      date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+    }
+  }
+  if (!date || isNaN(date.getTime())) return null;
+
+  var name = (testName || "").toString().toUpperCase();
+  var daysToAdd = 28;
+  if (name.includes("FEMALE INFERTILITY") || name.includes("MALE INFERTILITY")) daysToAdd = 15;
+  else if (name.includes("AF") || name.includes("AMNIOTIC")) daysToAdd = 20;
+
+  date.setDate(date.getDate() + daysToAdd);
+  return date;
+}
+
 // =============================================
 // TIME-TRIGGER AUTOMATION — runs on a schedule
 // Set trigger: Extensions > Apps Script > Triggers > andersonLabClinicalHistoryAlert
@@ -136,9 +165,11 @@ function andersonLabClinicalHistoryAlert() {
   var testNameCol        = colIndex["test name"];
   var clientCol          = colIndex["client"];
   var receivedDateCol    = colIndex["received date"];
-  var tatCol             = colIndex["tat"];
   var clinicalHistoryCol = colIndex["clinical history writeup"];
   var emailSentCol       = colIndex["email sent"];
+
+  // TAT column is optional — calculated from received date if absent
+  var tatCol = colIndex["tat"];
 
   var missing = [];
   if (sampleNameCol      === undefined) missing.push("sample name");
@@ -146,7 +177,6 @@ function andersonLabClinicalHistoryAlert() {
   if (testNameCol        === undefined) missing.push("test name");
   if (clientCol          === undefined) missing.push("client");
   if (receivedDateCol    === undefined) missing.push("received date");
-  if (tatCol             === undefined) missing.push("tat");
   if (clinicalHistoryCol === undefined) missing.push("clinical history writeup");
   if (emailSentCol       === undefined) missing.push("email sent");
 
@@ -155,7 +185,7 @@ function andersonLabClinicalHistoryAlert() {
     return;
   }
 
-  Logger.log("✅ All columns found. Starting row check...");
+  Logger.log("✅ All columns found. TAT column: " + (tatCol !== undefined ? "present" : "absent — will calculate from received date"));
 
   var today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -172,31 +202,29 @@ function andersonLabClinicalHistoryAlert() {
                " | History: [" + clinicalHistory + "]" +
                " | Email Sent: [" + emailSent + "]");
 
-    if (clinicalHistory !== "") {
-      Logger.log("Row " + i + " → Skipped (history already filled)");
-      continue;
-    }
-    if (emailSent !== "") {
-      Logger.log("Row " + i + " → Skipped (alert already sent on " + emailSent + ")");
-      continue;
-    }
+    if (clinicalHistory !== "") { Logger.log("Row " + i + " → Skipped (history filled)"); continue; }
+    if (emailSent !== "")       { Logger.log("Row " + i + " → Skipped (alert already sent on " + emailSent + ")"); continue; }
 
-    var rawTAT = row[tatCol];
+    // Resolve TAT date: from sheet column if present, otherwise calculate
     var tatDate;
-
-    if (rawTAT instanceof Date && !isNaN(rawTAT)) {
-      tatDate = new Date(rawTAT);
-    } else if (rawTAT && rawTAT.toString().trim() !== "") {
-      var tatStr   = rawTAT.toString().trim();
-      var tatParts = tatStr.includes("/") ? tatStr.split("/") : tatStr.split("-");
-      if (tatParts && tatParts.length === 3) {
-        tatDate = new Date(parseInt(tatParts[2]), parseInt(tatParts[1]) - 1, parseInt(tatParts[0]));
+    if (tatCol !== undefined && row[tatCol]) {
+      var rawTAT = row[tatCol];
+      if (rawTAT instanceof Date && !isNaN(rawTAT)) {
+        tatDate = new Date(rawTAT);
       } else {
-        Logger.log("Row " + i + " → Unrecognized TAT date format: " + tatStr);
-        continue;
+        var tatStr   = rawTAT.toString().trim();
+        var tatParts = tatStr.includes("/") ? tatStr.split("/") : tatStr.split("-");
+        if (tatParts.length === 3) {
+          tatDate = new Date(parseInt(tatParts[2]), parseInt(tatParts[1]) - 1, parseInt(tatParts[0]));
+        }
       }
     } else {
-      Logger.log("Row " + i + " → No TAT date, skipping");
+      var testNameVal = row[testNameCol] ? row[testNameCol].toString() : "";
+      tatDate = calculateTATDateFromReceived(row[receivedDateCol], testNameVal);
+    }
+
+    if (!tatDate || isNaN(tatDate.getTime())) {
+      Logger.log("Row " + i + " → Could not determine TAT date, skipping");
       continue;
     }
 
@@ -221,8 +249,7 @@ function andersonLabClinicalHistoryAlert() {
       sendAlertEmail(andersonId, sampleName, client, testName, formattedReceivedDate, formattedTAT, daysUntilTAT);
       var sentOn = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd-MM-yyyy");
       sheet.getRange(i + 1, emailSentCol + 1).setValue(sentOn);
-      Logger.log("✅ Email alert sent for Anderson ID: " + andersonId + " on " + sentOn);
-
+      Logger.log("✅ Email sent for " + andersonId + " on " + sentOn);
     } else {
       Logger.log("Row " + i + " → TAT is " + daysUntilTAT + " days away, no alert yet");
     }
