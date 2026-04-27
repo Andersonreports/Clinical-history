@@ -747,31 +747,35 @@ async function sendSampleReminder(index, btnEl) {
         }
     }
 
-    // Fallback: open Gmail compose in a new tab (pre-filled)
+    // Fallback: open Gmail compose in a new tab (pre-filled with table format)
     const subject = `Action Required: Clinical History Missing for Anderson ID ${item.andersonId}`;
+    const sep = '─'.repeat(60);
     const body = [
         'Dear Team,',
         '',
-        `The following sample with Anderson ID ${item.andersonId} has no Clinical History recorded.`,
+        `This is a reminder that the following sample has NO Clinical History recorded.`,
         '',
-        `Sample Name  : ${item.sampleName}`,
-        `Client       : ${item.client}`,
-        `Test         : ${item.testName}`,
-        `Received Date: ${item.receivedDate}`,
-        `TAT Date     : ${item.tatDate}`,
+        sep,
+        `  Anderson ID   : ${item.andersonId}`,
+        `  Sample Name   : ${item.sampleName}`,
+        `  Client        : ${item.client}`,
+        `  Test          : ${item.testName}`,
+        `  Received Date : ${item.receivedDate}`,
+        `  TAT Date      : ${item.tatDate}`,
+        sep,
         '',
-        'Please provide the Clinical History details at the earliest.',
+        'Kindly provide the Clinical History details at the earliest to avoid',
+        'any delay in processing and releasing the report on time.',
         '',
         'Thank you,',
         'Anderson Lab Reporting System'
     ].join('\n');
-    // Gmail compose fallback — just open the tab, don't mark as sent
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(EMAIL_RECIPIENT)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(gmailUrl, '_blank');
     btnEl.disabled = false;
     btnEl.innerHTML = '<i data-lucide="send"></i><span>Send Reminder</span>';
     if (typeof lucide !== 'undefined') lucide.createIcons();
-    showToast('Gmail compose opened — send the email to confirm.');
+    showToast('Auto-send failed — Gmail opened. Please authorize the script first.', 'error');
 }
 
 async function syncData(silent = false) {
