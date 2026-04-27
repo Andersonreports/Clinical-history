@@ -5,7 +5,7 @@ const LOCAL_DATA_PATH = 'data.json';
 const AUTO_SYNC_INTERVAL = 30000; // 30 seconds
 const TAT_REMINDER_DAYS = 10;
 const EMAIL_WEBHOOK_URL = ''; // Set to your deployed Apps Script Web App URL to enable server-side email sending.
-const EMAIL_RECIPIENT = 'andersongenecoverage@gmail.com';
+const EMAIL_RECIPIENT = 'jeevav936@gmail.com';
 
 let state = {
     data: [],

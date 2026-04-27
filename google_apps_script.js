@@ -15,7 +15,7 @@
  * For automatic TAT alerts: set a time-based trigger on andersonLabClinicalHistoryAlert()
  */
 
-var ALERT_EMAIL           = "andersongenecoverage@gmail.com";
+var ALERT_EMAIL           = "jeevav936@gmail.com";
 var ALERT_BEFORE_TAT_DAYS = 15;
 
 // Only include sheet tabs from 2026 onwards
