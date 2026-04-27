@@ -4,9 +4,8 @@ const SYNC_URL = 'https://script.google.com/macros/s/AKfycbxXXafajUy5_1komoDIFid
 const LOCAL_DATA_PATH = 'data.json';
 const AUTO_SYNC_INTERVAL = 30000; // 30 seconds
 const TAT_REMINDER_DAYS = 10;
-const EMAIL_WEBHOOK_URL = ''; // Set this to your deployed Apps Script POST endpoint if you want automatic server-side email sending.
-const EMAIL_RECIPIENT = 'clinical@yourdomain.com'; // Update this address to the concerned person or team email.
-const TAT_REMINDER_STORAGE_KEY = 'tatReminderEmailSent';
+const EMAIL_WEBHOOK_URL = ''; // Set to your deployed Apps Script Web App URL to enable server-side email sending.
+const EMAIL_RECIPIENT = 'andersongenecoverage@gmail.com';
 
 let state = {
     data: [],
@@ -43,14 +42,6 @@ function initEventListeners() {
 
     const syncBtn = document.getElementById('sync-btn');
     if (syncBtn) syncBtn.addEventListener('click', () => syncData(false));
-
-    const autoMailBtn = document.getElementById('auto-mail-btn');
-    if (autoMailBtn) {
-        autoMailBtn.addEventListener('click', sendTATReminderEmails);
-        if (localStorage.getItem(TAT_REMINDER_STORAGE_KEY) === 'true') {
-            markAutoMailSent();
-        }
-    }
 
     const closePanel = document.getElementById('close-panel');
     const overlay = document.getElementById('panel-overlay');
@@ -479,6 +470,7 @@ function renderGrid() {
     }
     pageData.forEach((item, index) => {
         const absoluteIndex = index;
+        const alreadyEmailSent = localStorage.getItem(`emailSent_${item.andersonId}`) === 'true';
         const tr = document.createElement('tr');
         tr.onclick = () => openSidePanel(absoluteIndex);
         tr.innerHTML = `
@@ -503,7 +495,8 @@ function renderGrid() {
                     <span>${item.hasHistory ? 'Completed' : 'Action Required'}</span>
                 </div>
             </td>
-            <td style="text-align:right;">
+            <td style="text-align:right; white-space:nowrap;">
+                ${!item.hasHistory ? `<button class="btn-send-mail${alreadyEmailSent ? ' sent' : ''}" onclick="event.stopPropagation(); sendSampleReminder(${absoluteIndex}, this)" ${alreadyEmailSent ? 'disabled' : ''}><i data-lucide="${alreadyEmailSent ? 'check' : 'send'}"></i>${alreadyEmailSent ? 'Sent' : 'Mail'}</button>` : ''}
                 <button class="btn-sync-compact" style="padding: 4px 10px; font-size:10px;">DETAILS</button>
             </td>
         `;
@@ -621,30 +614,14 @@ function isTatDueWithinDays(tatDate, days) {
     return diff >= 0 && diff <= days;
 }
 
-function buildReminderBody(records) {
-    const total = records.length;
-    const lines = [
-        'Dear Concerned Person,',
-        '',
-        `The following ${total} sample${total === 1 ? '' : 's'} have TAT due within ${TAT_REMINDER_DAYS} days and require clinical history details:`,
-        ''
-    ];
+async function sendSampleReminder(index, btnEl) {
+    const item = state.filteredData[index];
+    if (!item) return;
+    const emailSentKey = `emailSent_${item.andersonId}`;
 
-    records.slice(0, 15).forEach(item => {
-        lines.push(`• ${item.sampleName} | ${item.andersonId} | ${item.testName} | Received: ${item.receivedDate} | TAT: ${item.tatDate}`);
-    });
-
-    if (total > 15) {
-        lines.push('', `...and ${total - 15} more records.`);
-    }
-
-    lines.push('', 'Please share the clinical history details for these samples as soon as possible.', '', 'Thank you,', 'Clinical History Tracker');
-    return lines.join('\n');
-}
-
-async function sendAutomatedMail(records) {
-    const emailBody = buildReminderBody(records);
-    const subject = 'Clinical History Request - TAT due in 10 days';
+    btnEl.disabled = true;
+    btnEl.innerHTML = '<i data-lucide="loader-2" class="spin"></i>';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 
     if (EMAIL_WEBHOOK_URL) {
         try {
@@ -652,60 +629,59 @@ async function sendAutomatedMail(records) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    recipient: EMAIL_RECIPIENT,
-                    subject,
-                    requestNote: 'Please provide clinical history details for the listed samples.',
-                    records: records.map(item => ({
-                        sampleName: item.sampleName,
-                        andersonId: item.andersonId,
-                        testName: item.testName,
-                        client: item.client,
-                        receivedDate: item.receivedDate,
-                        tatDate: item.tatDate,
-                        month: item.month
-                    }))
+                    andersonId: item.andersonId,
+                    sampleName: item.sampleName,
+                    client: item.client,
+                    testName: item.testName,
+                    receivedDate: item.receivedDate,
+                    tatDate: item.tatDate
                 })
             });
-            if (!response.ok) throw new Error('Mail service returned error');
+            if (!response.ok) throw new Error('Mail service error');
             const data = await response.json();
             if (data.success) {
-                return true;
+                localStorage.setItem(emailSentKey, 'true');
+                btnEl.classList.add('sent');
+                btnEl.innerHTML = '<i data-lucide="check"></i> Sent';
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                showToast(`Reminder sent for ${item.andersonId}`);
+                return;
             }
-            throw new Error(data.error || 'Mail service returned failure');
+            throw new Error(data.error || 'Service failed');
         } catch (err) {
-            console.error('Automated mail failed', err);
-            showToast('Automatic mail service failed. Opening email composer instead.', 'error');
+            console.error('Send reminder failed', err);
+            btnEl.disabled = false;
+            btnEl.innerHTML = '<i data-lucide="send"></i> Mail';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            showToast('Mail service failed. Opening email composer.', 'error');
         }
     }
 
-    const mailto = `mailto:${encodeURIComponent(EMAIL_RECIPIENT)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
-    window.location.href = mailto;
-    return true;
-}
-
-function markAutoMailSent() {
-    const autoMailBtn = document.getElementById('auto-mail-btn');
-    if (autoMailBtn) {
-        autoMailBtn.classList.add('sent');
-        autoMailBtn.disabled = true;
-        const text = document.getElementById('auto-mail-text');
-        if (text) text.textContent = 'TAT Reminder Sent';
-    }
-    localStorage.setItem(TAT_REMINDER_STORAGE_KEY, 'true');
-}
-
-async function sendTATReminderEmails() {
-    const dueRecords = state.data.filter(item => !item.hasHistory && item.tatDate && item.tatDate !== '-' && isTatDueWithinDays(item.tatDate, TAT_REMINDER_DAYS));
-    if (dueRecords.length === 0) {
-        showToast(`No records found with TAT due within ${TAT_REMINDER_DAYS} days.`);
-        return;
-    }
-
-    const success = await sendAutomatedMail(dueRecords);
-    if (success) {
-        markAutoMailSent();
-        showToast('TAT reminder email request prepared and sent.');
-    }
+    // Fallback: open the default email client
+    const subject = `Action Required: Clinical History Missing for Anderson ID ${item.andersonId}`;
+    const body = [
+        'Dear Team,',
+        '',
+        `The following sample with Anderson ID ${item.andersonId} has no Clinical History recorded.`,
+        '',
+        `Sample Name  : ${item.sampleName}`,
+        `Client       : ${item.client}`,
+        `Test         : ${item.testName}`,
+        `Received Date: ${item.receivedDate}`,
+        `TAT Date     : ${item.tatDate}`,
+        '',
+        'Please provide the Clinical History details at the earliest.',
+        '',
+        'Thank you,',
+        'Anderson Lab Reporting System'
+    ].join('\n');
+    window.open(`mailto:${encodeURIComponent(EMAIL_RECIPIENT)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+    localStorage.setItem(emailSentKey, 'true');
+    btnEl.classList.add('sent');
+    btnEl.innerHTML = '<i data-lucide="check"></i> Sent';
+    btnEl.disabled = true;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    showToast(`Reminder prepared for ${item.andersonId}`);
 }
 
 async function syncData(silent = false) {

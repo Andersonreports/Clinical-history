@@ -49,17 +49,19 @@ body {
     display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;
 }
 .btn-sync-compact:hover { background: #edf1f7; }
-.btn-mail-action {
-    white-space: nowrap;
+.btn-send-mail {
+    background: var(--bg-main); border: 1px solid var(--border);
+    padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 10px;
+    display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+    transition: all 0.2s; margin-right: 4px; white-space: nowrap;
+    color: var(--primary);
 }
-.btn-mail-action.sent {
-    background: var(--success);
-    color: white;
-    border-color: var(--success);
+.btn-send-mail:hover { background: #edf1f7; }
+.btn-send-mail.sent {
+    background: var(--success); color: white;
+    border-color: var(--success); cursor: default;
 }
-.btn-mail-action.sent:hover {
-    background: #00d69d;
-}
+.btn-send-mail.sent:hover { background: var(--success); }
 
 .app-shell { display: flex; flex: 1; overflow: hidden; }
 
