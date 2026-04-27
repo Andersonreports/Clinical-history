@@ -57,7 +57,7 @@
                     <select id="test-filter" class="select-minimal">
                         <option value="all">All Test Categories</option>
                     </select>
-                    <div class="tat-badge" id="tat-due-count">Due in 10 days: 0</div>
+                    <div class="tat-badge" id="tat-due-count" onclick="openTATModal()" style="cursor:pointer;">Due in 10 days: 0</div>
                 </div>
             </div>
 
@@ -165,6 +165,39 @@
             </div>
         </div>
         <div id="panel-overlay" class="panel-overlay"></div>
+    </div>
+
+    <!-- TAT Due Modal -->
+    <div id="tat-modal-overlay" class="tat-modal-overlay" onclick="closeTATModal(event)">
+        <div class="tat-modal">
+            <div class="tat-modal-header">
+                <div>
+                    <h3>Samples Due in <span id="modal-days">10</span> Days</h3>
+                    <p id="modal-subtitle">0 samples need clinical history</p>
+                </div>
+                <button class="tat-modal-close" onclick="closeTATModal()">&times;</button>
+            </div>
+            <div class="tat-modal-body">
+                <table class="tat-modal-table">
+                    <thead>
+                        <tr>
+                            <th>Sample Name</th>
+                            <th>Anderson ID</th>
+                            <th>Test</th>
+                            <th>TAT Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tat-modal-rows"></tbody>
+                </table>
+            </div>
+            <div class="tat-modal-footer">
+                <button id="send-all-btn" class="btn-send-all" onclick="sendAllTATReminders(this)">
+                    <i data-lucide="send"></i>
+                    <span id="send-all-text">Send Reminder to All</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     <div id="toast" class="toast"></div>

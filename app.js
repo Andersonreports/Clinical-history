@@ -776,6 +776,111 @@ async function sendSampleReminder(index, btnEl) {
     showToast('Auto-send failed — Gmail opened. Please authorize the script first.', 'error');
 }
 
+// ── TAT Due Modal ──────────────────────────────────────────
+function getTATDueItems() {
+    return state.data.filter(item =>
+        !item.hasHistory &&
+        item.tatDate && item.tatDate !== '-' &&
+        isTatDueWithinDays(item.tatDate, TAT_REMINDER_DAYS)
+    );
+}
+
+function openTATModal() {
+    const items = getTATDueItems();
+    const overlay = document.getElementById('tat-modal-overlay');
+    const tbody = document.getElementById('tat-modal-rows');
+    const subtitle = document.getElementById('modal-subtitle');
+    if (!overlay || !tbody) return;
+
+    subtitle.textContent = `${items.length} sample${items.length !== 1 ? 's' : ''} need clinical history`;
+    tbody.innerHTML = '';
+
+    if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="padding:40px; text-align:center; color:var(--text-dim); font-weight:600;">No samples due within ${TAT_REMINDER_DAYS} days</td></tr>`;
+    } else {
+        items.forEach((item, i) => {
+            const tr = document.createElement('tr');
+            tr.dataset.index = i;
+            tr.innerHTML = `
+                <td style="font-weight:700;">${item.sampleName}</td>
+                <td><code class="token-id" style="font-size:11px;">${item.andersonId}</code></td>
+                <td style="font-size:12px; color:var(--text-dim);">${item.testCategory}</td>
+                <td style="font-weight:700; color:#b35a00;">${item.tatDate}</td>
+                <td><span class="mail-status pending" id="ms-${i}">Pending</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // Reset send-all button
+    const btn = document.getElementById('send-all-btn');
+    const btnText = document.getElementById('send-all-text');
+    if (btn) { btn.disabled = false; btn.className = 'btn-send-all'; }
+    if (btnText) btnText.textContent = 'Send Reminder to All';
+
+    overlay.classList.add('open');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function closeTATModal(e) {
+    if (e && e.target !== document.getElementById('tat-modal-overlay')) return;
+    document.getElementById('tat-modal-overlay').classList.remove('open');
+}
+
+async function sendReminderForItem(item) {
+    if (!EMAIL_WEBHOOK_URL) return { success: false, error: 'No webhook URL configured' };
+    try {
+        const params = new URLSearchParams({
+            action: 'sendReminder',
+            andersonId: item.andersonId,
+            sampleName: item.sampleName,
+            client: item.client,
+            testName: item.testName,
+            receivedDate: item.receivedDate,
+            tatDate: item.tatDate
+        });
+        const response = await fetch(`${EMAIL_WEBHOOK_URL}?${params}`);
+        if (!response.ok) return { success: false, error: `HTTP ${response.status}` };
+        const data = await response.json();
+        return data.success ? { success: true } : { success: false, error: data.error || 'Failed' };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+}
+
+async function sendAllTATReminders(btn) {
+    const items = getTATDueItems();
+    if (items.length === 0) return;
+
+    btn.disabled = true;
+    const btnText = document.getElementById('send-all-text');
+
+    let sent = 0, failed = 0;
+    for (let i = 0; i < items.length; i++) {
+        const statusEl = document.getElementById(`ms-${i}`);
+        if (statusEl) { statusEl.className = 'mail-status sending'; statusEl.textContent = 'Sending...'; }
+
+        const result = await sendReminderForItem(items[i]);
+
+        if (result.success) {
+            sent++;
+            items[i].emailSent = getTodayDateStr();
+            if (statusEl) { statusEl.className = 'mail-status sent'; statusEl.textContent = 'Sent ✓'; }
+        } else {
+            failed++;
+            if (statusEl) { statusEl.className = 'mail-status failed'; statusEl.textContent = 'Failed'; }
+        }
+
+        if (btnText) btnText.textContent = `Sending ${i + 1} / ${items.length}...`;
+    }
+
+    btn.className = 'btn-send-all done';
+    btn.disabled = true;
+    if (btnText) btnText.textContent = `Done — ${sent} sent${failed > 0 ? `, ${failed} failed` : ''}`;
+    showToast(`${sent} reminder${sent !== 1 ? 's' : ''} sent successfully.`);
+    updateTatDueCount();
+}
+
 async function syncData(silent = false) {
     await loadData(true, silent);
 }
