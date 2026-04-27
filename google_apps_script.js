@@ -54,10 +54,58 @@ function doGet() {
     });
 
     return ContentService.createTextOutput(JSON.stringify(allRecords))
-      .setMimeType(ContentService.MimeType.JSON);
+      .setMimeType(ContentService.MimeType.JSON)
+      .setHeader('Access-Control-Allow-Origin', '*');
 
   } catch (e) {
     return ContentService.createTextOutput(JSON.stringify({ "error": e.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
+      .setMimeType(ContentService.MimeType.JSON)
+      .setHeader('Access-Control-Allow-Origin', '*');
+  }
+}
+
+function doPost(e) {
+  try {
+    var payload = {};
+    if (e.postData && e.postData.contents) {
+      payload = JSON.parse(e.postData.contents);
+    }
+
+    var recipient = payload.recipient || 'clinical@yourdomain.com';
+    var subject = payload.subject || 'Clinical History Request - TAT due in 10 days';
+    var requestNote = payload.requestNote || 'Please provide clinical history details for the following samples.';
+    var records = Array.isArray(payload.records) ? payload.records : [];
+
+    var bodyLines = [];
+    bodyLines.push(requestNote);
+    bodyLines.push('');
+    bodyLines.push('Records needing clinical history details:');
+    bodyLines.push('');
+
+    if (records.length === 0) {
+      bodyLines.push('No records provided.');
+    } else {
+      records.forEach(function(record) {
+        var display = [record.sampleName || 'N/A', record.andersonId || 'N/A', record.testName || 'N/A', record.receivedDate || 'N/A', record.tatDate || 'N/A'];
+        bodyLines.push('• ' + display.join(' | '));
+      });
+    }
+
+    bodyLines.push('');
+    bodyLines.push('Please share the clinical history details at the earliest.');
+    bodyLines.push('');
+    bodyLines.push('Thank you,');
+    bodyLines.push('Clinical History Tracker');
+
+    GmailApp.sendEmail(recipient, subject, bodyLines.join('\n'));
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, sentTo: recipient }))
+      .setMimeType(ContentService.MimeType.JSON)
+      .setHeader('Access-Control-Allow-Origin', '*');
+
+  } catch (e) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: e.toString() }))
+      .setMimeType(ContentService.MimeType.JSON)
+      .setHeader('Access-Control-Allow-Origin', '*');
   }
 }

@@ -3,6 +3,10 @@
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbxXXafajUy5_1komoDIFidxrLuehfHVUUTZRlZnfeeTEI68GElYdvJGOvVI16gLPmhmZg/exec';
 const LOCAL_DATA_PATH = 'data.json';
 const AUTO_SYNC_INTERVAL = 30000; // 30 seconds
+const TAT_REMINDER_DAYS = 10;
+const EMAIL_WEBHOOK_URL = ''; // Set this to your deployed Apps Script POST endpoint if you want automatic server-side email sending.
+const EMAIL_RECIPIENT = 'clinical@yourdomain.com'; // Update this address to the concerned person or team email.
+const TAT_REMINDER_STORAGE_KEY = 'tatReminderEmailSent';
 
 let state = {
     data: [],
@@ -39,6 +43,14 @@ function initEventListeners() {
 
     const syncBtn = document.getElementById('sync-btn');
     if (syncBtn) syncBtn.addEventListener('click', () => syncData(false));
+
+    const autoMailBtn = document.getElementById('auto-mail-btn');
+    if (autoMailBtn) {
+        autoMailBtn.addEventListener('click', sendTATReminderEmails);
+        if (localStorage.getItem(TAT_REMINDER_STORAGE_KEY) === 'true') {
+            markAutoMailSent();
+        }
+    }
 
     const closePanel = document.getElementById('close-panel');
     const overlay = document.getElementById('panel-overlay');
@@ -407,6 +419,12 @@ function updateStats() {
     if (sPending) sPending.textContent = pending;
 }
 
+function updateTatDueCount() {
+    const dueCount = state.data.filter(item => !item.hasHistory && item.tatDate && item.tatDate !== '-' && isTatDueWithinDays(item.tatDate, TAT_REMINDER_DAYS)).length;
+    const badge = document.getElementById('tat-due-count');
+    if (badge) badge.textContent = `Due in ${TAT_REMINDER_DAYS} days: ${dueCount}`;
+}
+
 function handleSearch(e) {
     state.searchQuery = e.target.value.toLowerCase();
     state.currentPage = 1;
@@ -437,6 +455,7 @@ function applyFilters() {
     });
     renderGrid();
     updateStats();
+    updateTatDueCount();
 }
 
 function renderGrid() {
@@ -568,6 +587,124 @@ function showToast(message, type = 'info') {
         toast.style.borderLeft = `5px solid ${type === 'error' ? 'var(--danger)' : 'var(--success)'}`;
         toast.classList.add('show');
         setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+}
+
+function parseDateString(value) {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    const str = value.toString().trim();
+    if (!str) return null;
+    let date = null;
+    if (str.includes('T')) {
+        date = new Date(str);
+    } else if (/\d{1,2}[-/]\d{1,2}[-/]\d{2,4}/.test(str)) {
+        const parts = str.split(/[-/]/).map(p => p.trim());
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        let year = parseInt(parts[2], 10);
+        if (year < 100) year += 2000;
+        date = new Date(year, month, day);
+    } else {
+        date = new Date(str);
+    }
+    return date && !isNaN(date.getTime()) ? date : null;
+}
+
+function isTatDueWithinDays(tatDate, days) {
+    const date = parseDateString(tatDate);
+    if (!date) return false;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    const diff = Math.ceil((date - now) / (1000 * 60 * 60 * 24));
+    return diff >= 0 && diff <= days;
+}
+
+function buildReminderBody(records) {
+    const total = records.length;
+    const lines = [
+        'Dear Concerned Person,',
+        '',
+        `The following ${total} sample${total === 1 ? '' : 's'} have TAT due within ${TAT_REMINDER_DAYS} days and require clinical history details:`,
+        ''
+    ];
+
+    records.slice(0, 15).forEach(item => {
+        lines.push(`• ${item.sampleName} | ${item.andersonId} | ${item.testName} | Received: ${item.receivedDate} | TAT: ${item.tatDate}`);
+    });
+
+    if (total > 15) {
+        lines.push('', `...and ${total - 15} more records.`);
+    }
+
+    lines.push('', 'Please share the clinical history details for these samples as soon as possible.', '', 'Thank you,', 'Clinical History Tracker');
+    return lines.join('\n');
+}
+
+async function sendAutomatedMail(records) {
+    const emailBody = buildReminderBody(records);
+    const subject = 'Clinical History Request - TAT due in 10 days';
+
+    if (EMAIL_WEBHOOK_URL) {
+        try {
+            const response = await fetch(EMAIL_WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    recipient: EMAIL_RECIPIENT,
+                    subject,
+                    requestNote: 'Please provide clinical history details for the listed samples.',
+                    records: records.map(item => ({
+                        sampleName: item.sampleName,
+                        andersonId: item.andersonId,
+                        testName: item.testName,
+                        client: item.client,
+                        receivedDate: item.receivedDate,
+                        tatDate: item.tatDate,
+                        month: item.month
+                    }))
+                })
+            });
+            if (!response.ok) throw new Error('Mail service returned error');
+            const data = await response.json();
+            if (data.success) {
+                return true;
+            }
+            throw new Error(data.error || 'Mail service returned failure');
+        } catch (err) {
+            console.error('Automated mail failed', err);
+            showToast('Automatic mail service failed. Opening email composer instead.', 'error');
+        }
+    }
+
+    const mailto = `mailto:${encodeURIComponent(EMAIL_RECIPIENT)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+    window.location.href = mailto;
+    return true;
+}
+
+function markAutoMailSent() {
+    const autoMailBtn = document.getElementById('auto-mail-btn');
+    if (autoMailBtn) {
+        autoMailBtn.classList.add('sent');
+        autoMailBtn.disabled = true;
+        const text = document.getElementById('auto-mail-text');
+        if (text) text.textContent = 'TAT Reminder Sent';
+    }
+    localStorage.setItem(TAT_REMINDER_STORAGE_KEY, 'true');
+}
+
+async function sendTATReminderEmails() {
+    const dueRecords = state.data.filter(item => !item.hasHistory && item.tatDate && item.tatDate !== '-' && isTatDueWithinDays(item.tatDate, TAT_REMINDER_DAYS));
+    if (dueRecords.length === 0) {
+        showToast(`No records found with TAT due within ${TAT_REMINDER_DAYS} days.`);
+        return;
+    }
+
+    const success = await sendAutomatedMail(dueRecords);
+    if (success) {
+        markAutoMailSent();
+        showToast('TAT reminder email request prepared and sent.');
     }
 }
 

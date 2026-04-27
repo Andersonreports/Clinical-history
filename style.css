@@ -49,6 +49,17 @@ body {
     display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;
 }
 .btn-sync-compact:hover { background: #edf1f7; }
+.btn-mail-action {
+    white-space: nowrap;
+}
+.btn-mail-action.sent {
+    background: var(--success);
+    color: white;
+    border-color: var(--success);
+}
+.btn-mail-action.sent:hover {
+    background: #00d69d;
+}
 
 .app-shell { display: flex; flex: 1; overflow: hidden; }
 
@@ -107,6 +118,7 @@ body {
 
 .filters-wrapper { display: flex; align-items: center; gap: 12px; }
 .filter-badge { background: #eaedf2; color: var(--primary); padding: 8px 14px; border-radius: 8px; font-weight: 800; font-size: 11px; text-transform: uppercase; }
+.tat-badge { background: #fff5e8; color: #b35a00; padding: 8px 14px; border-radius: 8px; font-weight: 800; font-size: 11px; text-transform: uppercase; border: 1px solid #ffd4a3; }
 .select-minimal { padding: 8px 12px; border: 1px solid var(--border); background: white; border-radius: 8px; font-weight: 700; font-size: 12px; outline: none; cursor: pointer; }
 
 /* Data Surface - MAXIMIZED */
