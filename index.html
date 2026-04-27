@@ -177,6 +177,9 @@
                 </div>
                 <button class="tat-modal-close" onclick="closeTATModal()">&times;</button>
             </div>
+            <div class="tat-modal-search">
+                <input type="text" id="tat-modal-search" placeholder="Search by name, Anderson ID or test..." oninput="filterTATModal(this.value)">
+            </div>
             <div class="tat-modal-body">
                 <table class="tat-modal-table">
                     <thead>

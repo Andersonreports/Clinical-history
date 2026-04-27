@@ -818,8 +818,19 @@ function openTATModal() {
     if (btn) { btn.disabled = false; btn.className = 'btn-send-all'; }
     if (btnText) btnText.textContent = 'Send Reminder to All';
 
+    const searchInput = document.getElementById('tat-modal-search');
+    if (searchInput) searchInput.value = '';
+
     overlay.classList.add('open');
     if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function filterTATModal(query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll('#tat-modal-rows tr').forEach(tr => {
+        const text = tr.textContent.toLowerCase();
+        tr.style.display = text.includes(q) ? '' : 'none';
+    });
 }
 
 function closeTATModal(e) {
