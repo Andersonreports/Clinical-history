@@ -16,7 +16,7 @@
  */
 
 var ALERT_EMAIL           = "jeevav936@gmail.com";
-var ALERT_BEFORE_TAT_DAYS = 15;
+var ALERT_BEFORE_TAT_DAYS = 10;
 
 // Only include sheet tabs from 2026 onwards
 function isRelevantSheet(sheetName) {
