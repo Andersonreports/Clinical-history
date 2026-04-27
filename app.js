@@ -1,10 +1,10 @@
 // Clinical History Tracker - Clinical OS Logic
 
-const SYNC_URL = 'https://script.google.com/macros/s/AKfycbwIOMoURKhZ7xgeU41p5hbLDWQeEmVDdsAQ9MrOJu-oKOZ9rMVab4UsgDrzd4_umVcZig/exec';
+const SYNC_URL = 'https://script.google.com/macros/s/AKfycby0MbYrBhtFov8Kda1wqsQu6YNgwPeKliaLW-oCqehCostpJpqyhQltY1yNGoXddh2zqw/exec';
 const LOCAL_DATA_PATH = 'data.json';
 const AUTO_SYNC_INTERVAL = 30000; // 30 seconds
 const TAT_REMINDER_DAYS = 10;
-const EMAIL_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwIOMoURKhZ7xgeU41p5hbLDWQeEmVDdsAQ9MrOJu-oKOZ9rMVab4UsgDrzd4_umVcZig/exec';
+const EMAIL_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycby0MbYrBhtFov8Kda1wqsQu6YNgwPeKliaLW-oCqehCostpJpqyhQltY1yNGoXddh2zqw/exec';
 const EMAIL_RECIPIENT = 'jeevav936@gmail.com';
 
 let state = {
