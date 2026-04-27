@@ -472,7 +472,6 @@ function renderGrid() {
     }
     pageData.forEach((item, index) => {
         const absoluteIndex = index;
-        const mailBtn = !item.hasHistory ? buildMailButton(item, absoluteIndex) : '';
         const tr = document.createElement('tr');
         tr.onclick = () => openSidePanel(absoluteIndex);
         tr.innerHTML = `
@@ -498,7 +497,6 @@ function renderGrid() {
                 </div>
             </td>
             <td style="text-align:right; white-space:nowrap;">
-                ${mailBtn}
                 <button class="btn-sync-compact" style="padding: 4px 10px; font-size:10px;">DETAILS</button>
             </td>
         `;
@@ -536,6 +534,37 @@ function renderPagination(totalItems) {
     container.appendChild(createBtn('&raquo;', state.currentPage + 1, false, state.currentPage === totalPages));
 }
 
+function updatePanelMailButton(item, index) {
+    const btn = document.getElementById('panel-mail-btn');
+    const textEl = document.getElementById('panel-mail-text');
+    if (!btn || !textEl) return;
+
+    if (item.hasHistory) {
+        btn.style.display = 'none';
+        return;
+    }
+
+    btn.style.display = '';
+    btn.className = 'btn-panel-mail';
+    btn.disabled = false;
+    btn.onclick = (e) => { e.stopPropagation(); sendSampleReminder(index, btn, textEl); };
+
+    const es = getEmailSentState(item);
+    if (!es.sent) {
+        btn.innerHTML = '<i data-lucide="send"></i><span>Send Reminder</span>';
+    } else if (es.resend) {
+        btn.classList.add('resend');
+        const label = es.date ? `Resend · ${formatSentDate(es.date)}` : 'Resend';
+        btn.innerHTML = `<i data-lucide="send"></i><span>${label}</span>`;
+    } else {
+        btn.classList.add('sent');
+        btn.disabled = true;
+        const label = es.date ? `Sent ${formatSentDate(es.date)}` : 'Sent';
+        btn.innerHTML = `<i data-lucide="check"></i><span>${label}</span>`;
+    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
 function openSidePanel(index) {
     const item = state.filteredData[index];
     if (!item) return;
@@ -551,6 +580,7 @@ function openSidePanel(index) {
     document.getElementById('d-trf').textContent = item.trfReport || 'No TRF information found.';
     document.getElementById('d-history').textContent = item.history || 'NO CLINICAL WRITEUP PROVIDED';
     document.getElementById('d-remark').textContent = item.remark || 'No specific registry remarks.';
+    updatePanelMailButton(item, index);
     document.getElementById('side-panel').classList.add('open');
     document.getElementById('panel-overlay').classList.add('active');
     if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -674,7 +704,7 @@ function markButtonSent(btnEl, dateStr) {
     btnEl.classList.remove('resend');
     btnEl.classList.add('sent');
     btnEl.disabled = true;
-    btnEl.innerHTML = `<i data-lucide="check"></i>${label}`;
+    btnEl.innerHTML = `<i data-lucide="check"></i><span>${label}</span>`;
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
@@ -720,7 +750,7 @@ async function sendSampleReminder(index, btnEl) {
         }
     }
 
-    // Fallback: open the default email client
+    // Fallback: open Gmail compose in a new tab (pre-filled)
     const subject = `Action Required: Clinical History Missing for Anderson ID ${item.andersonId}`;
     const body = [
         'Dear Team,',
@@ -738,10 +768,11 @@ async function sendSampleReminder(index, btnEl) {
         'Thank you,',
         'Anderson Lab Reporting System'
     ].join('\n');
-    window.open(`mailto:${encodeURIComponent(EMAIL_RECIPIENT)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(EMAIL_RECIPIENT)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(gmailUrl, '_blank');
     localStorage.setItem(dateKey, todayStr);
     markButtonSent(btnEl, todayStr);
-    showToast(`Reminder prepared for ${item.andersonId}`);
+    showToast(`Gmail compose opened for ${item.andersonId}`);
 }
 
 async function syncData(silent = false) {

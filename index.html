@@ -109,7 +109,13 @@
             <div class="panel-content">
                 <header class="panel-header">
                     <button id="close-panel" class="btn-back"><i data-lucide="arrow-left"></i> <span>Close Panel</span></button>
-                    <button id="copy-btn" class="btn-action-pro"><i data-lucide="copy"></i> Copy Writeup</button>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button id="panel-mail-btn" class="btn-panel-mail" style="display:none;">
+                            <i data-lucide="send"></i>
+                            <span id="panel-mail-text">Send Reminder</span>
+                        </button>
+                        <button id="copy-btn" class="btn-action-pro"><i data-lucide="copy"></i> Copy Writeup</button>
+                    </div>
                 </header>
 
                 <div class="panel-body">
