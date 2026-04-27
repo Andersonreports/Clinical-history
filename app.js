@@ -719,7 +719,7 @@ async function sendSampleReminder(index, btnEl) {
         try {
             const response = await fetch(EMAIL_WEBHOOK_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({
                     andersonId: item.andersonId,
                     sampleName: item.sampleName,
