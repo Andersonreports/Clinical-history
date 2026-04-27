@@ -153,21 +153,8 @@ function updateCardActiveState(status) {
 async function loadData(forceRefresh = false, silent = false) {
     if (!silent) showLoading(true);
     try {
-        let rawData;
-        if (forceRefresh) {
-            rawData = await fetchFromSyncSource();
-        } else {
-            try {
-                const response = await fetch(LOCAL_DATA_PATH);
-                if (response.ok) {
-                    rawData = await response.json();
-                } else {
-                    throw new Error('Local data file not found');
-                }
-            } catch (err) {
-                rawData = await fetchFromSyncSource();
-            }
-        }
+        // Always fetch live from Apps Script — local data.json may be stale
+        const rawData = await fetchFromSyncSource();
 
         state.data = normalizeData(rawData)
             .filter(item => {
