@@ -62,6 +62,11 @@ body {
     border-color: var(--success); cursor: default;
 }
 .btn-send-mail.sent:hover { background: var(--success); }
+.btn-send-mail.resend {
+    background: #fff4e5; color: #b35a00;
+    border-color: #ffc57a;
+}
+.btn-send-mail.resend:hover { background: #ffe8c2; }
 
 .app-shell { display: flex; flex: 1; overflow: hidden; }
 

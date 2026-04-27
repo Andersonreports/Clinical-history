@@ -176,8 +176,8 @@ function andersonLabClinicalHistoryAlert() {
       Logger.log("Row " + i + " → Skipped (history already filled)");
       continue;
     }
-    if (emailSent === "Yes") {
-      Logger.log("Row " + i + " → Skipped (alert already sent)");
+    if (emailSent !== "") {
+      Logger.log("Row " + i + " → Skipped (alert already sent on " + emailSent + ")");
       continue;
     }
 
@@ -219,8 +219,9 @@ function andersonLabClinicalHistoryAlert() {
       }
 
       sendAlertEmail(andersonId, sampleName, client, testName, formattedReceivedDate, formattedTAT, daysUntilTAT);
-      sheet.getRange(i + 1, emailSentCol + 1).setValue("Yes");
-      Logger.log("✅ Email alert sent for Anderson ID: " + andersonId);
+      var sentOn = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd-MM-yyyy");
+      sheet.getRange(i + 1, emailSentCol + 1).setValue(sentOn);
+      Logger.log("✅ Email alert sent for Anderson ID: " + andersonId + " on " + sentOn);
 
     } else {
       Logger.log("Row " + i + " → TAT is " + daysUntilTAT + " days away, no alert yet");

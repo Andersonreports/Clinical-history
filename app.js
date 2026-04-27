@@ -342,9 +342,11 @@ function normalizeData(data) {
         const remark = row['Remark'] || row['REMARK'] || '';
         const trfReport = row['TRF AND REPORTS'] || row['TRF AND REPORT'] || row['TRF and Reports'] || '';
         const hasHistory = trfReport && trfReport.toString().trim().length > 0 && trfReport.toString().toLowerCase() !== 'nan';
+        const emailSentRaw = getVal(['Email Sent', 'EMAIL SENT', 'Email sent']);
+        const emailSent = (emailSentRaw && emailSentRaw !== '-') ? emailSentRaw.toString().trim() : '';
 
         return {
-            sampleName, andersonId, testName, testCategory, client, history, trfReport, month, remark, hasHistory, receivedDate, tatDate
+            sampleName, andersonId, testName, testCategory, client, history, trfReport, month, remark, hasHistory, receivedDate, tatDate, emailSent
         };
     });
 }
@@ -470,7 +472,7 @@ function renderGrid() {
     }
     pageData.forEach((item, index) => {
         const absoluteIndex = index;
-        const alreadyEmailSent = localStorage.getItem(`emailSent_${item.andersonId}`) === 'true';
+        const mailBtn = !item.hasHistory ? buildMailButton(item, absoluteIndex) : '';
         const tr = document.createElement('tr');
         tr.onclick = () => openSidePanel(absoluteIndex);
         tr.innerHTML = `
@@ -496,7 +498,7 @@ function renderGrid() {
                 </div>
             </td>
             <td style="text-align:right; white-space:nowrap;">
-                ${!item.hasHistory ? `<button class="btn-send-mail${alreadyEmailSent ? ' sent' : ''}" onclick="event.stopPropagation(); sendSampleReminder(${absoluteIndex}, this)" ${alreadyEmailSent ? 'disabled' : ''}><i data-lucide="${alreadyEmailSent ? 'check' : 'send'}"></i>${alreadyEmailSent ? 'Sent' : 'Mail'}</button>` : ''}
+                ${mailBtn}
                 <button class="btn-sync-compact" style="padding: 4px 10px; font-size:10px;">DETAILS</button>
             </td>
         `;
@@ -614,10 +616,73 @@ function isTatDueWithinDays(tatDate, days) {
     return diff >= 0 && diff <= days;
 }
 
+function formatSentDate(date) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const d = date.getDate();
+    const m = months[date.getMonth()];
+    const y = date.getFullYear();
+    return new Date().getFullYear() === y ? `${d} ${m}` : `${d} ${m} ${y}`;
+}
+
+function getEmailSentState(item) {
+    // Sheet column (trigger-sent date) takes priority over localStorage
+    let sentDateStr = null;
+    if (item.emailSent && item.emailSent !== 'Yes') {
+        sentDateStr = item.emailSent;
+    } else {
+        sentDateStr = localStorage.getItem(`emailSentDate_${item.andersonId}`);
+    }
+    const legacySent = item.emailSent === 'Yes' || localStorage.getItem(`emailSent_${item.andersonId}`) === 'true';
+
+    if (!sentDateStr && !legacySent) return { sent: false };
+    if (!sentDateStr) return { sent: true, date: null, resend: false };
+
+    const date = parseDateString(sentDateStr);
+    if (!date) return { sent: true, date: null, resend: false };
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    const daysSince = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+    return { sent: true, date, daysSince, resend: daysSince >= 7 };
+}
+
+function buildMailButton(item, index) {
+    const es = getEmailSentState(item);
+    if (!es.sent) {
+        return `<button class="btn-send-mail" onclick="event.stopPropagation(); sendSampleReminder(${index}, this)"><i data-lucide="send"></i>Mail</button>`;
+    }
+    if (es.resend) {
+        const label = es.date ? `Resend · ${formatSentDate(es.date)}` : 'Resend';
+        return `<button class="btn-send-mail resend" onclick="event.stopPropagation(); sendSampleReminder(${index}, this)"><i data-lucide="send"></i>${label}</button>`;
+    }
+    const label = es.date ? `Sent ${formatSentDate(es.date)}` : 'Sent';
+    return `<button class="btn-send-mail sent" disabled><i data-lucide="check"></i>${label}</button>`;
+}
+
+function getTodayDateStr() {
+    const t = new Date();
+    const dd = t.getDate().toString().padStart(2, '0');
+    const mm = (t.getMonth() + 1).toString().padStart(2, '0');
+    return `${dd}-${mm}-${t.getFullYear()}`;
+}
+
+function markButtonSent(btnEl, dateStr) {
+    const date = parseDateString(dateStr);
+    const label = date ? `Sent ${formatSentDate(date)}` : 'Sent';
+    btnEl.classList.remove('resend');
+    btnEl.classList.add('sent');
+    btnEl.disabled = true;
+    btnEl.innerHTML = `<i data-lucide="check"></i>${label}`;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
 async function sendSampleReminder(index, btnEl) {
     const item = state.filteredData[index];
     if (!item) return;
-    const emailSentKey = `emailSent_${item.andersonId}`;
+    const dateKey = `emailSentDate_${item.andersonId}`;
+    const todayStr = getTodayDateStr();
 
     btnEl.disabled = true;
     btnEl.innerHTML = '<i data-lucide="loader-2" class="spin"></i>';
@@ -640,10 +705,8 @@ async function sendSampleReminder(index, btnEl) {
             if (!response.ok) throw new Error('Mail service error');
             const data = await response.json();
             if (data.success) {
-                localStorage.setItem(emailSentKey, 'true');
-                btnEl.classList.add('sent');
-                btnEl.innerHTML = '<i data-lucide="check"></i> Sent';
-                if (typeof lucide !== 'undefined') lucide.createIcons();
+                localStorage.setItem(dateKey, todayStr);
+                markButtonSent(btnEl, todayStr);
                 showToast(`Reminder sent for ${item.andersonId}`);
                 return;
             }
@@ -676,11 +739,8 @@ async function sendSampleReminder(index, btnEl) {
         'Anderson Lab Reporting System'
     ].join('\n');
     window.open(`mailto:${encodeURIComponent(EMAIL_RECIPIENT)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
-    localStorage.setItem(emailSentKey, 'true');
-    btnEl.classList.add('sent');
-    btnEl.innerHTML = '<i data-lucide="check"></i> Sent';
-    btnEl.disabled = true;
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+    localStorage.setItem(dateKey, todayStr);
+    markButtonSent(btnEl, todayStr);
     showToast(`Reminder prepared for ${item.andersonId}`);
 }
 
