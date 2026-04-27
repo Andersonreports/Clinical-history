@@ -24,6 +24,7 @@ let state = {
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof lucide !== 'undefined') lucide.createIcons();
+    clearStaleEmailLocalStorage();
     initEventListeners();
     loadData();
 
@@ -660,20 +661,12 @@ function formatSentDate(date) {
 }
 
 function getEmailSentState(item) {
-    // Sheet column (trigger-sent date) takes priority over localStorage
-    let sentDateStr = null;
-    if (item.emailSent && item.emailSent !== 'Yes') {
-        sentDateStr = item.emailSent;
-    } else {
-        sentDateStr = localStorage.getItem(`emailSentDate_${item.andersonId}`);
-    }
-    const legacySent = item.emailSent === 'Yes' || localStorage.getItem(`emailSent_${item.andersonId}`) === 'true';
+    // Source of truth is the sheet's Email Sent column only
+    if (!item.emailSent) return { sent: false };
+    if (item.emailSent === 'Yes') return { sent: true, date: null, resend: false };
 
-    if (!sentDateStr && !legacySent) return { sent: false };
-    if (!sentDateStr) return { sent: true, date: null, resend: false };
-
-    const date = parseDateString(sentDateStr);
-    if (!date) return { sent: true, date: null, resend: false };
+    const date = parseDateString(item.emailSent);
+    if (!date) return { sent: false };
 
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -701,6 +694,12 @@ function getTodayDateStr() {
     const dd = t.getDate().toString().padStart(2, '0');
     const mm = (t.getMonth() + 1).toString().padStart(2, '0');
     return `${dd}-${mm}-${t.getFullYear()}`;
+}
+
+function clearStaleEmailLocalStorage() {
+    Object.keys(localStorage)
+        .filter(k => k.startsWith('emailSent_') || k.startsWith('emailSentDate_'))
+        .forEach(k => localStorage.removeItem(k));
 }
 
 function markButtonSent(btnEl, dateStr) {
@@ -740,7 +739,7 @@ async function sendSampleReminder(index, btnEl) {
             if (!response.ok) throw new Error('Mail service error');
             const data = await response.json();
             if (data.success) {
-                localStorage.setItem(dateKey, todayStr);
+                item.emailSent = todayStr; // update local state immediately
                 markButtonSent(btnEl, todayStr);
                 showToast(`Reminder sent for ${item.andersonId}`);
                 return;
@@ -773,11 +772,13 @@ async function sendSampleReminder(index, btnEl) {
         'Thank you,',
         'Anderson Lab Reporting System'
     ].join('\n');
+    // Gmail compose fallback — just open the tab, don't mark as sent
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(EMAIL_RECIPIENT)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(gmailUrl, '_blank');
-    localStorage.setItem(dateKey, todayStr);
-    markButtonSent(btnEl, todayStr);
-    showToast(`Gmail compose opened for ${item.andersonId}`);
+    btnEl.disabled = false;
+    btnEl.innerHTML = '<i data-lucide="send"></i><span>Send Reminder</span>';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    showToast('Gmail compose opened — send the email to confirm.');
 }
 
 async function syncData(silent = false) {
