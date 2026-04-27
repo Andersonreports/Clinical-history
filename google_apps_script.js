@@ -25,7 +25,29 @@ function isRelevantSheet(sheetName) {
   return parseInt(yearMatch[0]) >= 2026;
 }
 
-function doGet() {
+function doGet(e) {
+  // Handle email send action from the tracker
+  if (e && e.parameter && e.parameter.action === 'sendReminder') {
+    try {
+      var p = e.parameter;
+      var daysUntilTAT = 'N/A';
+      try {
+        var parts = (p.tatDate || '').split(/[-\/]/);
+        var tatParsed = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+        var today = new Date();
+        today.setHours(0, 0, 0, 0);
+        daysUntilTAT = Math.floor((tatParsed - today) / (1000 * 60 * 60 * 24));
+      } catch (ex) {}
+      sendAlertEmail(p.andersonId, p.sampleName, p.client, p.testName, p.receivedDate, p.tatDate, daysUntilTAT);
+      return ContentService.createTextOutput(JSON.stringify({ success: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (err) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // Default: fetch sheet data
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheets = ss.getSheets();
@@ -67,13 +89,11 @@ function doGet() {
     });
 
     return ContentService.createTextOutput(JSON.stringify(allRecords))
-      .setMimeType(ContentService.MimeType.JSON)
-;
+      .setMimeType(ContentService.MimeType.JSON);
 
   } catch (e) {
     return ContentService.createTextOutput(JSON.stringify({ "error": e.toString() }))
-      .setMimeType(ContentService.MimeType.JSON)
-;
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 

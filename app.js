@@ -717,18 +717,16 @@ async function sendSampleReminder(index, btnEl) {
 
     if (EMAIL_WEBHOOK_URL) {
         try {
-            const response = await fetch(EMAIL_WEBHOOK_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({
-                    andersonId: item.andersonId,
-                    sampleName: item.sampleName,
-                    client: item.client,
-                    testName: item.testName,
-                    receivedDate: item.receivedDate,
-                    tatDate: item.tatDate
-                })
+            const params = new URLSearchParams({
+                action: 'sendReminder',
+                andersonId: item.andersonId,
+                sampleName: item.sampleName,
+                client: item.client,
+                testName: item.testName,
+                receivedDate: item.receivedDate,
+                tatDate: item.tatDate
             });
+            const response = await fetch(`${EMAIL_WEBHOOK_URL}?${params}`);
             if (!response.ok) throw new Error('Mail service error');
             const data = await response.json();
             if (data.success) {
