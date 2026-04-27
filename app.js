@@ -340,7 +340,7 @@ function normalizeData(data) {
         }
         const remark = row['Remark'] || row['REMARK'] || '';
         const trfReport = row['TRF AND REPORTS'] || row['TRF AND REPORT'] || row['TRF and Reports'] || '';
-        const hasHistory = trfReport && trfReport.toString().trim().length > 0 && trfReport.toString().toLowerCase() !== 'nan';
+        const hasHistory = history && history.toString().trim().length > 0 && history.toString().toLowerCase() !== 'nan';
         const emailSentRaw = getVal(['Email Sent', 'EMAIL SENT', 'Email sent']);
         const emailSent = (emailSentRaw && emailSentRaw !== '-') ? emailSentRaw.toString().trim() : '';
 
