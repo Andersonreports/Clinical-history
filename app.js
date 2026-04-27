@@ -739,9 +739,9 @@ async function sendSampleReminder(index, btnEl) {
         } catch (err) {
             console.error('Send reminder failed', err);
             btnEl.disabled = false;
-            btnEl.innerHTML = '<i data-lucide="send"></i> Mail';
+            btnEl.innerHTML = '<i data-lucide="send"></i><span>Send Reminder</span>';
             if (typeof lucide !== 'undefined') lucide.createIcons();
-            showToast('Mail service failed. Opening email composer.', 'error');
+            showToast(`Mail failed: ${err.message}`, 'error');
         }
     }
 
