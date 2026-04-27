@@ -168,7 +168,12 @@ async function loadData(forceRefresh = false, silent = false) {
             }
         }
 
-        state.data = normalizeData(rawData).sort((a, b) => getMonthSortValue(b.month) - getMonthSortValue(a.month));
+        state.data = normalizeData(rawData)
+            .filter(item => {
+                const parts = item.month.split(' ');
+                return parts.length === 2 && parseInt(parts[1]) >= 2026;
+            })
+            .sort((a, b) => getMonthSortValue(b.month) - getMonthSortValue(a.month));
 
         populateSidebar();
         populateFilters();
