@@ -386,6 +386,8 @@ function selectMonth(m, el) {
     state.filters.month = m;
     state.currentPage = 1;
     applyFilters();
+    // Close sidebar on mobile after selection
+    if (window.innerWidth <= 768) toggleSidebar();
 }
 
 function populateFilters() {
@@ -914,6 +916,14 @@ async function sendAllTATReminders(btn) {
     if (btnText) btnText.textContent = `Done — ${sent} sent${failed > 0 ? `, ${failed} failed` : ''}`;
     showToast(`${sent} reminder${sent !== 1 ? 's' : ''} sent successfully.`);
     updateTatDueCount();
+}
+
+function toggleSidebar() {
+    const sidebar = document.querySelector('.app-sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (!sidebar) return;
+    sidebar.classList.toggle('open');
+    if (overlay) overlay.classList.toggle('active');
 }
 
 async function syncData(silent = false) {

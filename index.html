@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clinical History Tracker | Anderson Reports</title>
-    <link rel="stylesheet" href="style.css?v=4.1">
+    <link rel="stylesheet" href="style.css?v=5.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -16,10 +16,15 @@
     <div class="top-page-banner">
         <div class="banner-content">
             <h1>Clinical History Tracker</h1>
-            <button id="sync-btn" class="btn-sync-compact">
-                <i data-lucide="refresh-cw"></i>
-                <span id="sync-text">Refresh Data</span>
-            </button>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button id="sync-btn" class="btn-sync-compact">
+                    <i data-lucide="refresh-cw"></i>
+                    <span id="sync-text">Refresh Data</span>
+                </button>
+                <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()">
+                    <i data-lucide="menu"></i>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -165,6 +170,7 @@
             </div>
         </div>
         <div id="panel-overlay" class="panel-overlay"></div>
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     </div>
 
     <!-- TAT Due Modal -->
