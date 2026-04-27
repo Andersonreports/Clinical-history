@@ -806,7 +806,7 @@ function openTATModal() {
                 <td><code class="token-id" style="font-size:11px;">${item.andersonId}</code></td>
                 <td style="font-size:12px; color:var(--text-dim);">${item.testCategory}</td>
                 <td style="font-weight:700; color:#b35a00;">${item.tatDate}</td>
-                <td><span class="mail-status pending" id="ms-${i}">Pending</span></td>
+                <td><button class="btn-modal-send" id="ms-${i}" onclick="sendModalReminder(${i}, this)"><i data-lucide="send"></i>Send</button></td>
             `;
             tbody.appendChild(tr);
         });
@@ -822,6 +822,29 @@ function openTATModal() {
     if (searchInput) searchInput.value = '';
 
     overlay.classList.add('open');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+async function sendModalReminder(i, btn) {
+    const items = getTATDueItems();
+    const item = items[i];
+    if (!item) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i>';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    const result = await sendReminderForItem(item);
+
+    if (result.success) {
+        item.emailSent = getTodayDateStr();
+        btn.className = 'btn-modal-send sent';
+        btn.innerHTML = '<i data-lucide="check"></i>Sent';
+    } else {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="send"></i>Retry';
+        showToast(`Failed: ${result.error}`, 'error');
+    }
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
@@ -876,11 +899,12 @@ async function sendAllTATReminders(btn) {
         if (result.success) {
             sent++;
             items[i].emailSent = getTodayDateStr();
-            if (statusEl) { statusEl.className = 'mail-status sent'; statusEl.textContent = 'Sent ✓'; }
+            if (statusEl) { statusEl.className = 'btn-modal-send sent'; statusEl.innerHTML = '<i data-lucide="check"></i>Sent'; }
         } else {
             failed++;
-            if (statusEl) { statusEl.className = 'mail-status failed'; statusEl.textContent = 'Failed'; }
+            if (statusEl) { statusEl.className = 'btn-modal-send'; statusEl.innerHTML = '<i data-lucide="x"></i>Failed'; }
         }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
 
         if (btnText) btnText.textContent = `Sending ${i + 1} / ${items.length}...`;
     }

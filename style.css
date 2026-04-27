@@ -209,11 +209,10 @@ body {
 .btn-send-all:hover { background:#4a55e0; }
 .btn-send-all:disabled { background:#aaa; cursor:default; }
 .btn-send-all.done { background:var(--success); }
-.mail-status { font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
-.mail-status.pending { background:#eef0fe; color:var(--primary); }
-.mail-status.sending { background:#fff4e5; color:#b35a00; }
-.mail-status.sent { background:#e6faf5; color:#00875a; }
-.mail-status.failed { background:#fdecea; color:#c0392b; }
+.btn-modal-send { display:inline-flex; align-items:center; gap:5px; padding:5px 14px; border-radius:8px; border:1.5px solid var(--primary); background:white; color:var(--primary); font-size:12px; font-weight:700; cursor:pointer; transition:all 0.2s; font-family:var(--font-pro); }
+.btn-modal-send:hover { background:#eef0fe; }
+.btn-modal-send:disabled { opacity:0.6; cursor:default; }
+.btn-modal-send.sent { background:var(--success); border-color:var(--success); color:white; cursor:default; }
 
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
