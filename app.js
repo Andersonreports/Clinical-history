@@ -182,10 +182,9 @@ async function loadData(forceRefresh = false, silent = false) {
     if (!silent) showLoading(true);
     try {
         const rawData = await fetchFromSyncSource();
-        // Save to cache for next load
         try { localStorage.setItem(CACHE_KEY, JSON.stringify(rawData)); } catch (e) {}
         applyRawData(rawData);
-        if (forceRefresh && !silent) showToast('Database Synced Successfully.');
+        if (!silent) showToast('Database Synced Successfully.');
     } catch (error) {
         console.error('Data Sync Error:', error);
         if (!silent) showToast(`Sync Failed: ${error.message}`, 'error');
@@ -196,14 +195,23 @@ async function loadData(forceRefresh = false, silent = false) {
 
 async function fetchFromSyncSource() {
     if (SYNC_URL.includes('script.google.com')) {
-        const response = await fetch(SYNC_URL);
-        if (!response.ok) throw new Error(`Apps Script returned HTTP ${response.status}`);
-        const text = await response.text();
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
         try {
-            return JSON.parse(text);
+            const response = await fetch(SYNC_URL, { signal: controller.signal });
+            clearTimeout(timeout);
+            if (!response.ok) throw new Error(`Apps Script returned HTTP ${response.status}`);
+            const text = await response.text();
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error('Non-JSON response from Apps Script:', text.substring(0, 300));
+                throw new Error('Apps Script returned non-JSON — check deployment access settings');
+            }
         } catch (e) {
-            console.error('Non-JSON response from Apps Script:', text.substring(0, 300));
-            throw new Error('Apps Script returned non-JSON — set deployment access to "Anyone"');
+            clearTimeout(timeout);
+            if (e.name === 'AbortError') throw new Error('Sync timed out after 30s — Apps Script may be slow');
+            throw e;
         }
     } else {
         return new Promise((resolve, reject) => {
