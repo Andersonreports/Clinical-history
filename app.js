@@ -57,7 +57,12 @@ function initEventListeners() {
     const btnComplete = document.getElementById('btn-stat-complete');
     const btnPending = document.getElementById('btn-stat-pending');
 
-    if (btnTotal) btnTotal.onclick = () => restoreAllRecords(); // Clicking Total resets EVERYTHING
+    if (btnTotal) btnTotal.onclick = () => {
+        updateCardActiveState('all');
+        state.filters.status = 'all';
+        state.currentPage = 1;
+        applyFilters();
+    };
 
     if (btnComplete) btnComplete.onclick = () => {
         updateCardActiveState('available');
