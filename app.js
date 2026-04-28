@@ -259,23 +259,60 @@ function getTestCategory(name, sampleName = '') {
     const n = name.toString().toUpperCase().trim();
     const sn = sampleName.toString().toUpperCase().trim();
 
-    // Priority checks for specific categories with custom TATs
-    if (n.includes('FEMALE INFERTILITY')) return 'FEMALE INFERTILITY';
-    if (n.includes('MALE INFERTILITY')) return 'MALE INFERTILITY';
-    if (n.includes('AF') || n.includes('AMNIOTIC') || sn.includes(' AF') || sn.endsWith(' AF') || sn.includes('AF/')) return 'AF';
+    // CM SCHEME - WHOLE EXOME SEQUENCING (CM-WES, CM SCHEME, CM WHOLE EXOME, etc.)
+    if (n.includes('CM') && (n.includes('SCHEME') || n.includes('WES') || n.includes('EXOME')))
+        return 'CM SCHEME - WHOLE EXOME SEQUENCING';
 
-    if (n.includes('CARRIER') || n.includes('SCREENING')) return 'CARRIER SCREENING';
-    if (n.includes('WES') || n.includes('EXOME') || n.includes('SEQUENCING')) return 'WES';
-    if (n.includes('CMA') || n.includes('ARRAY') || n.includes('MICROARRAY')) return 'CMA';
-    if (n.includes('KARYOTYPE') || n.includes('BANDING')) return 'KARYOTYPE';
-    if (n.includes('NIPT') || n.includes('NIPS') || n.includes('NON INVASIVE')) return 'NIPT';
-    if (n.includes('NGS') || n.includes('PANEL') || n.includes('FOCUS')) return 'GENE PANEL';
-    if (n.includes('QF') || n.includes('PCR')) return 'QF-PCR';
-    if (n.includes('SANGER')) return 'SANGER';
-    if (n.includes('MLPA')) return 'MLPA';
-    if (n.includes('FRAGILE')) return 'FRAGILE X';
-    if (n.includes('SMA')) return 'SMA';
-    return 'Other';
+    // ADVAT FOCUS CARRIER SCREENING
+    if (n.includes('ADVAT')) return 'ADVAT FOCUS CARRIER SCREENING';
+
+    // COUPLE CARRIER SCREENING BY CLINICAL EXOME SEQUENCING (before clinical exome check)
+    if (n.includes('COUPLE') && n.includes('CARRIER'))
+        return 'COUPLE CARRIER SCREENING BY CLINICAL EXOME SEQUENCING';
+
+    // COMPREHENSIVE CARRIER SCREENING (before general carrier checks)
+    if (n.includes('COMPREHENSIVE') && n.includes('CARRIER'))
+        return 'COMPREHENSIVE CARRIER SCREENING';
+
+    // FEMALE INFERTILITY (includes WES/Female Infertility combos)
+    if (n.includes('FEMALE INFERTILITY') || n.includes('FEMALE INFERT'))
+        return 'FEMALE INFERTILITY';
+
+    // MALE INFERTILITY (includes WES/Male Infertility combos)
+    if (n.includes('MALE INFERTILITY') || n.includes('MALE INFERT'))
+        return 'MALE INFERTILITY';
+
+    // CLINICAL EXOME SEQUENCING (CES shorthand, clinical exome)
+    if (n === 'CES' || n.includes('CLINICAL EXOME'))
+        return 'CLINICAL EXOME SEQUENCING';
+
+    // AF (Amniotic Fluid) — detected by test name or sample name markers; preserves 20-day TAT
+    if (n.includes('AMNIOTIC') || sn.includes(' AF') || sn.endsWith(' AF') || sn.includes('AF/') || sn.startsWith('AF '))
+        return 'AF';
+
+    // MITOCHONDRIAL DNA SEQUENCING BY NGS (standalone only — not part of WES/CES combos)
+    if (n.includes('MITOCHONDRIAL') && !n.includes('WHOLE EXOME') && !n.includes('WES') && !n.includes('CLINICAL EXOME'))
+        return 'MITOCHONDRIAL DNA SEQUENCING BY NGS';
+
+    // NGS DATA REANALYSIS
+    if (n.includes('REANALYSIS') || n.includes('RE-ANALYSIS') || n.includes('RE ANALYSIS'))
+        return 'NGS DATA REANALYSIS';
+
+    // WHOLE GENOME SEQUENCING (before WES to avoid false match on WHOLE)
+    if (n.includes('WGS') || n.includes('WHOLE GENOME'))
+        return 'WHOLE GENOME SEQUENCING (WGS)';
+
+    // WHOLE EXOME SEQUENCING (WES)
+    if (n.includes('WES') || n.includes('WHOLE EXOME') || n.includes('EXOME'))
+        return 'WHOLE EXOME SEQUENCING (WES)';
+
+    // GENE PANEL (panels, hereditary, single-gene sequencing, etc.)
+    if (n.includes('PANEL') || n.includes('HEREDITARY') || n.includes('HCGP') ||
+        n.includes('SINGLE GENE') || n.includes('SINGLE FULL GENE') ||
+        n.includes('GENE SEQUENCING') || n.includes('MUTATION ANALYSIS') || n.includes('MODY'))
+        return 'GENE PANEL';
+
+    return 'Other Tests';
 }
 
 function calculateTAT(receivedDate, category) {
