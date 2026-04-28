@@ -154,23 +154,37 @@ function updateCardActiveState(status) {
     }
 }
 
+const CACHE_KEY = 'clinicalDataCache';
+
+function applyRawData(rawData) {
+    state.data = normalizeData(rawData)
+        .filter(item => {
+            const parts = item.month.split(' ');
+            return parts.length === 2 && parseInt(parts[1]) >= 2026;
+        })
+        .sort((a, b) => getMonthSortValue(b.month) - getMonthSortValue(a.month));
+    populateSidebar();
+    populateFilters();
+    applyFilters();
+}
+
 async function loadData(forceRefresh = false, silent = false) {
+    // Show cached data instantly if available
+    if (!forceRefresh) {
+        try {
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (cached) {
+                applyRawData(JSON.parse(cached));
+            }
+        } catch (e) {}
+    }
+
     if (!silent) showLoading(true);
     try {
-        // Always fetch live from Apps Script — local data.json may be stale
         const rawData = await fetchFromSyncSource();
-
-        state.data = normalizeData(rawData)
-            .filter(item => {
-                const parts = item.month.split(' ');
-                return parts.length === 2 && parseInt(parts[1]) >= 2026;
-            })
-            .sort((a, b) => getMonthSortValue(b.month) - getMonthSortValue(a.month));
-
-        populateSidebar();
-        populateFilters();
-        applyFilters();
-
+        // Save to cache for next load
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify(rawData)); } catch (e) {}
+        applyRawData(rawData);
         if (forceRefresh && !silent) showToast('Database Synced Successfully.');
     } catch (error) {
         console.error('Data Sync Error:', error);
