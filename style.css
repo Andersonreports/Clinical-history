@@ -213,6 +213,8 @@ body {
 .btn-modal-send:hover { background:#eef0fe; }
 .btn-modal-send:disabled { opacity:0.6; cursor:default; }
 .btn-modal-send.sent { background:var(--success); border-color:var(--success); color:white; cursor:default; }
+.btn-modal-send.resend { background:#fff4e5; border-color:#ffc57a; color:#b35a00; }
+.btn-modal-send.resend:hover { background:#ffe8c2; }
 
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }

@@ -24,7 +24,6 @@ let state = {
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof lucide !== 'undefined') lucide.createIcons();
-    clearStaleEmailLocalStorage();
     initEventListeners();
     loadData();
 
@@ -656,19 +655,29 @@ function formatSentDate(date) {
 }
 
 function getEmailSentState(item) {
-    // Source of truth is the sheet's Email Sent column only
-    if (!item.emailSent) return { sent: false };
-    if (item.emailSent === 'Yes') return { sent: true, date: null, resend: false };
+    // Gather candidates: sheet column + localStorage (manual sends)
+    const sheetVal   = item.emailSent && item.emailSent !== '' ? item.emailSent : null;
+    const localVal   = localStorage.getItem(`emailSentDate_${item.andersonId}`);
 
-    const date = parseDateString(item.emailSent);
-    if (!date) return { sent: false };
+    // Legacy "Yes" with no date — treat as sent but no date
+    if (sheetVal === 'Yes' && !localVal) return { sent: true, date: null, resend: false };
+
+    // Pick the most recent valid date from either source
+    const sheetDate  = sheetVal && sheetVal !== 'Yes' ? parseDateString(sheetVal) : null;
+    const localDate  = localVal ? parseDateString(localVal) : null;
+
+    let sentDate = null;
+    if (sheetDate && localDate) sentDate = sheetDate >= localDate ? sheetDate : localDate;
+    else sentDate = sheetDate || localDate;
+
+    if (!sentDate) return { sent: false };
 
     const now = new Date();
     now.setHours(0, 0, 0, 0);
-    const d = new Date(date);
+    const d = new Date(sentDate);
     d.setHours(0, 0, 0, 0);
     const daysSince = Math.floor((now - d) / (1000 * 60 * 60 * 24));
-    return { sent: true, date, daysSince, resend: daysSince >= 7 };
+    return { sent: true, date: sentDate, daysSince, resend: daysSince >= 7 };
 }
 
 function buildMailButton(item, index) {
@@ -732,7 +741,8 @@ async function sendSampleReminder(index, btnEl) {
             if (!response.ok) throw new Error('Mail service error');
             const data = await response.json();
             if (data.success) {
-                item.emailSent = todayStr; // update local state immediately
+                item.emailSent = todayStr;
+                localStorage.setItem(`emailSentDate_${item.andersonId}`, todayStr);
                 markButtonSent(btnEl, todayStr);
                 showToast(`Reminder sent for ${item.andersonId}`);
                 return;
@@ -801,6 +811,17 @@ function openTATModal() {
         tbody.innerHTML = `<tr><td colspan="5" style="padding:40px; text-align:center; color:var(--text-dim); font-weight:600;">No samples due within ${TAT_REMINDER_DAYS} days</td></tr>`;
     } else {
         items.forEach((item, i) => {
+            const es = getEmailSentState(item);
+            let actionBtn;
+            if (!es.sent) {
+                actionBtn = `<button class="btn-modal-send" id="ms-${i}" onclick="sendModalReminder(${i}, this)"><i data-lucide="send"></i>Send</button>`;
+            } else if (es.resend) {
+                const lbl = es.date ? `Resend · ${formatSentDate(es.date)}` : 'Resend';
+                actionBtn = `<button class="btn-modal-send resend" id="ms-${i}" onclick="sendModalReminder(${i}, this)"><i data-lucide="send"></i>${lbl}</button>`;
+            } else {
+                const lbl = es.date ? `Sent ${formatSentDate(es.date)}` : 'Sent';
+                actionBtn = `<button class="btn-modal-send sent" id="ms-${i}" disabled><i data-lucide="check"></i>${lbl}</button>`;
+            }
             const tr = document.createElement('tr');
             tr.dataset.index = i;
             tr.innerHTML = `
@@ -808,7 +829,7 @@ function openTATModal() {
                 <td><code class="token-id" style="font-size:11px;">${item.andersonId}</code></td>
                 <td style="font-size:12px; color:var(--text-dim);">${item.testCategory}</td>
                 <td style="font-weight:700; color:#b35a00;">${item.tatDate}</td>
-                <td><button class="btn-modal-send" id="ms-${i}" onclick="sendModalReminder(${i}, this)"><i data-lucide="send"></i>Send</button></td>
+                <td>${actionBtn}</td>
             `;
             tbody.appendChild(tr);
         });
@@ -839,7 +860,9 @@ async function sendModalReminder(i, btn) {
     const result = await sendReminderForItem(item);
 
     if (result.success) {
-        item.emailSent = getTodayDateStr();
+        const d = getTodayDateStr();
+        item.emailSent = d;
+        localStorage.setItem(`emailSentDate_${item.andersonId}`, d);
         btn.className = 'btn-modal-send sent';
         btn.innerHTML = '<i data-lucide="check"></i>Sent';
     } else {
@@ -900,7 +923,9 @@ async function sendAllTATReminders(btn) {
 
         if (result.success) {
             sent++;
-            items[i].emailSent = getTodayDateStr();
+            const d = getTodayDateStr();
+            items[i].emailSent = d;
+            localStorage.setItem(`emailSentDate_${items[i].andersonId}`, d);
             if (statusEl) { statusEl.className = 'btn-modal-send sent'; statusEl.innerHTML = '<i data-lucide="check"></i>Sent'; }
         } else {
             failed++;
