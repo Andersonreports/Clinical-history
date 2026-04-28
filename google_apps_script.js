@@ -186,6 +186,7 @@ function andersonLabClinicalHistoryAlert() {
   var clientCol          = colIndex["client"];
   var receivedDateCol    = colIndex["received date"];
   var clinicalHistoryCol = colIndex["clinical history writeup"];
+  var remarksCol         = colIndex["remark"];
   var emailSentCol       = colIndex["email sent"];
 
   // TAT column is optional — calculated from received date if absent
@@ -198,6 +199,7 @@ function andersonLabClinicalHistoryAlert() {
   if (clientCol          === undefined) missing.push("client");
   if (receivedDateCol    === undefined) missing.push("received date");
   if (clinicalHistoryCol === undefined) missing.push("clinical history writeup");
+  if (remarksCol         === undefined) missing.push("remark");
   if (emailSentCol       === undefined) missing.push("email sent");
 
   if (missing.length > 0) {
@@ -216,13 +218,20 @@ function andersonLabClinicalHistoryAlert() {
     if (!row[andersonIdCol] || row[andersonIdCol].toString().trim() === "") continue;
 
     var clinicalHistory = row[clinicalHistoryCol] ? row[clinicalHistoryCol].toString().trim() : "";
+    var remarks         = row[remarksCol]         ? row[remarksCol].toString().trim()         : "";
     var emailSent       = row[emailSentCol]       ? row[emailSentCol].toString().trim()       : "";
 
     Logger.log("Row " + i + " | ID: " + row[andersonIdCol] +
                " | History: [" + clinicalHistory + "]" +
+               " | Remarks: [" + remarks + "]" +
                " | Email Sent: [" + emailSent + "]");
 
-    if (clinicalHistory !== "") { Logger.log("Row " + i + " → Skipped (history filled)"); continue; }
+    if (clinicalHistory !== "" || remarks !== "" || 
+        clinicalHistory.toLowerCase().includes("written by internal team") || 
+        remarks.toLowerCase().includes("written by internal team")) { 
+      Logger.log("Row " + i + " → Skipped (history filled or written by internal team)"); 
+      continue; 
+    }
     if (emailSent !== "")       { Logger.log("Row " + i + " → Skipped (alert already sent on " + emailSent + ")"); continue; }
 
     // Resolve TAT date: from sheet column if present, otherwise calculate
