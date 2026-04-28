@@ -401,9 +401,21 @@ function populateFilters() {
 }
 
 function updateStats() {
-    const total = state.filteredData.length;
-    const complete = state.filteredData.filter(i => i.hasHistory).length;
-    const pending = total - complete;
+    // Always reflect month + test + search — never affected by status card clicks
+    const base = state.data.filter(item => {
+        const q = state.searchQuery;
+        const matchesSearch = !q ||
+            item.sampleName.toLowerCase().includes(q) ||
+            item.andersonId.toString().toLowerCase().includes(q) ||
+            item.testName.toLowerCase().includes(q) ||
+            item.client.toLowerCase().includes(q);
+        const matchesMonth = state.filters.month === 'all' || item.month === state.filters.month;
+        const matchesTest  = state.filters.test  === 'all' || item.testCategory === state.filters.test;
+        return matchesSearch && matchesMonth && matchesTest;
+    });
+    const total    = base.length;
+    const complete = base.filter(i => i.hasHistory).length;
+    const pending  = total - complete;
     const sTotal = document.getElementById('stat-total');
     const sComplete = document.getElementById('stat-complete');
     const sPending = document.getElementById('stat-pending');
