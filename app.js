@@ -782,10 +782,11 @@ async function sendSampleReminder(index, btnEl) {
     ].join('\n');
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(EMAIL_RECIPIENT)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(gmailUrl, '_blank');
-    btnEl.disabled = false;
-    btnEl.innerHTML = '<i data-lucide="send"></i><span>Send Reminder</span>';
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-    showToast('Auto-send failed — Gmail opened. Please authorize the script first.', 'error');
+    // Mark as sent so button persists across refreshes and prevents duplicates
+    item.emailSent = todayStr;
+    localStorage.setItem(`emailSentDate_${item.andersonId}`, todayStr);
+    markButtonSent(btnEl, todayStr);
+    showToast('Gmail opened — marked as sent to prevent duplicates.');
 }
 
 // ── TAT Due Modal ──────────────────────────────────────────
@@ -859,16 +860,22 @@ async function sendModalReminder(i, btn) {
 
     const result = await sendReminderForItem(item);
 
+    const d = getTodayDateStr();
     if (result.success) {
-        const d = getTodayDateStr();
         item.emailSent = d;
         localStorage.setItem(`emailSentDate_${item.andersonId}`, d);
         btn.className = 'btn-modal-send sent';
         btn.innerHTML = '<i data-lucide="check"></i>Sent';
     } else {
-        btn.disabled = false;
-        btn.innerHTML = '<i data-lucide="send"></i>Retry';
-        showToast(`Failed: ${result.error}`, 'error');
+        // Webhook failed — open Gmail compose and still mark as sent
+        const subject = `Action Required: Clinical History Missing for Anderson ID ${item.andersonId}`;
+        const body = `Dear Team,\n\nAnderson ID: ${item.andersonId}\nSample: ${item.sampleName}\nClient: ${item.client}\nTest: ${item.testName}\nReceived: ${item.receivedDate}\nTAT: ${item.tatDate}\n\nPlease provide clinical history at the earliest.\n\nThank you,\nAnderson Lab`;
+        window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(EMAIL_RECIPIENT)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+        item.emailSent = d;
+        localStorage.setItem(`emailSentDate_${item.andersonId}`, d);
+        btn.className = 'btn-modal-send sent';
+        btn.innerHTML = '<i data-lucide="check"></i>Sent';
+        showToast('Gmail opened — marked as sent.');
     }
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
