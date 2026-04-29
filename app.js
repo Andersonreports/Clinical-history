@@ -249,8 +249,11 @@ async function loadData(forceRefresh = false, silent = false) {
         try { localStorage.setItem(CACHE_KEY, JSON.stringify(rawData)); } catch (e) {}
         applyRawData(rawData);
         const secRows = Array.isArray(rawData) ? [] : (rawData.secondary || []);
-        const lookup = buildSecondaryLookup(secRows);
-        if (!silent) showToast(`Synced. Secondary: ${secRows.length} rows, ${Object.keys(lookup).length} matched.`);
+        const writeupRows = secRows.filter(r => Object.values(r).some(v => v && v.toString().trim().toLowerCase() === 'writeup available'));
+        const sampleRow = writeupRows[0] || secRows[0];
+        const sampleId = sampleRow ? (sampleRow['Anderson_ID'] || sampleRow['Anderson ID'] || 'NO ID COL') : 'no rows';
+        const sampleHistory = sampleRow ? Object.entries(sampleRow).find(([k,v]) => v && v.toString().trim().toLowerCase() === 'writeup available') : null;
+        if (!silent) showToast(`Writeup rows: ${writeupRows.length} | ID val: "${sampleId}" | Col: "${sampleHistory ? sampleHistory[0] : 'none'}"`, 'error');
     } catch (error) {
         console.error('Data Sync Error:', error);
         if (!silent) showToast(`Sync Failed: ${error.message}`, 'error');
