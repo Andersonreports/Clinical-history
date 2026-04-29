@@ -157,7 +157,10 @@ function updateCardActiveState(status) {
 const CACHE_KEY = 'clinicalDataCache';
 
 function applyRawData(rawData) {
-    state.data = normalizeData(rawData)
+    const primaryData = Array.isArray(rawData) ? rawData : (rawData.primary || rawData);
+    const secondaryData = Array.isArray(rawData) ? [] : (rawData.secondary || []);
+    const secondaryLookup = buildSecondaryLookup(secondaryData);
+    state.data = normalizeData(primaryData, secondaryLookup)
         .filter(item => {
             const parts = item.month.split(' ');
             return parts.length === 2 && parseInt(parts[1]) >= 2026;
@@ -166,6 +169,22 @@ function applyRawData(rawData) {
     populateSidebar();
     populateFilters();
     applyFilters();
+}
+
+function buildSecondaryLookup(secondaryData) {
+    const lookup = {};
+    if (!Array.isArray(secondaryData)) return lookup;
+    secondaryData.forEach(row => {
+        const h = row['Clinical History writeup'] || row['CLINICAL HISTORY WRITEUP'] ||
+                  row['Clinical history writeup'] || row['clinical history writeup'] || '';
+        const val = h.toString().trim();
+        if (!val || val.toLowerCase() === 'nan') return;
+        const id = (row['Anderson ID'] || row['ANDERSON ID'] || '').toString().trim();
+        const name = (row['Sample Name'] || row['SAMPLE NAME'] || '').toString().trim().toUpperCase();
+        if (id) lookup[id] = val;
+        if (name) lookup[name] = val;
+    });
+    return lookup;
 }
 
 async function loadData(forceRefresh = false, silent = false) {
@@ -357,7 +376,7 @@ function calculateTAT(receivedDate, category) {
     return `${d}-${m}-${y}`;
 }
 
-function normalizeData(data) {
+function normalizeData(data, secondaryLookup = {}) {
     if (!Array.isArray(data)) return [];
     return data.filter(row => row && (row['Sample Name'] || row['Anderson ID'] || row['SAMPLE NAME'] || row['ANDERSON ID'])).map(row => {
         const sampleName = row['Sample Name'] || row['SAMPLE NAME'] || 'N/A';
@@ -365,7 +384,12 @@ function normalizeData(data) {
         const testName = row['Test Name'] || row['TEST NAME'] || 'Unknown Test';
         const testCategory = getTestCategory(testName, sampleName);
         const client = row['Client'] || row['Client '] || row['CLIENT'] || '-';
-        const history = row['Clinical History writeup'] || row['CLINICAL HISTORY WRITEUP'] || '';
+        const primaryHistory = row['Clinical History writeup'] || row['CLINICAL HISTORY WRITEUP'] || '';
+        const primaryHasHistory = primaryHistory && primaryHistory.toString().trim().length > 0 && primaryHistory.toString().toLowerCase() !== 'nan';
+        const fallbackHistory = !primaryHasHistory
+            ? (secondaryLookup[andersonId] || secondaryLookup[sampleName.toUpperCase()] || '')
+            : '';
+        const history = primaryHasHistory ? primaryHistory : (fallbackHistory || primaryHistory);
         const month = normalizeMonth(row['Month']);
 
         // Aggressive header detection (strips spaces and special chars)
@@ -403,7 +427,7 @@ function normalizeData(data) {
         }
         const remark = row['Remark'] || row['REMARK'] || '';
         const trfReport = row['TRF AND REPORTS'] || row['TRF AND REPORT'] || row['TRF and Reports'] || '';
-        const hasHistory = history && history.toString().trim().length > 0 && history.toString().toLowerCase() !== 'nan';
+        const hasHistory = primaryHasHistory || (fallbackHistory.length > 0);
         const emailSentRaw = getVal(['Email Sent', 'EMAIL SENT', 'Email sent']);
         const emailSent = (emailSentRaw && emailSentRaw !== '-') ? emailSentRaw.toString().trim() : '';
 
