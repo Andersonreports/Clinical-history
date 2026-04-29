@@ -175,24 +175,50 @@ function buildSecondaryLookup(secondaryData) {
     const lookup = {};
     if (!Array.isArray(secondaryData)) return lookup;
     secondaryData.forEach(row => {
-        // Check clinical history writeup column first
-        const h = row['Clinical History writeup'] || row['CLINICAL HISTORY WRITEUP'] ||
-                  row['Clinical history writeup'] || row['clinical history writeup'] ||
-                  row['History writeup'] || row['HISTORY WRITEUP'] ||
-                  row['History Writeup'] || row['history writeup'] || '';
-        let val = h.toString().trim();
-
-        // If no writeup text, scan all columns for "Writeup available"
-        if (!val || val.toLowerCase() === 'nan') {
-            const hasWriteupAvailable = Object.values(row).some(
-                v => v && v.toString().trim().toLowerCase() === 'writeup available'
-            );
-            if (hasWriteupAvailable) val = 'Writeup available';
+        // Find history value from known column names
+        const historyCols = [
+            'Clinical History writeup', 'CLINICAL HISTORY WRITEUP',
+            'Clinical history writeup', 'clinical history writeup',
+            'History writeup', 'HISTORY WRITEUP', 'History Writeup', 'history writeup'
+        ];
+        let val = '';
+        for (const col of historyCols) {
+            const v = (row[col] || '').toString().trim();
+            if (v && v.toLowerCase() !== 'nan') { val = v; break; }
         }
 
-        if (!val || val.toLowerCase() === 'nan') return;
-        const id = (row['Anderson ID'] || row['ANDERSON ID'] || '').toString().trim();
-        const name = (row['Sample Name'] || row['SAMPLE NAME'] || '').toString().trim().toUpperCase();
+        // If no history column found, scan every cell for "Writeup available"
+        if (!val) {
+            const found = Object.values(row).find(
+                v => v && v.toString().trim().toLowerCase() === 'writeup available'
+            );
+            if (found) val = 'Writeup available';
+        }
+
+        if (!val) return;
+
+        // Find Anderson ID — try known column names, then pattern-match cells (AND...)
+        let id = (
+            row['Anderson ID'] || row['ANDERSON ID'] || row['Anderson id'] ||
+            row['anderson id'] || row['AndersonID'] || row['Sample ID'] || row['SAMPLE ID'] || ''
+        ).toString().trim();
+
+        if (!id) {
+            for (const v of Object.values(row)) {
+                if (v && /^AND\d+/i.test(v.toString().trim())) {
+                    id = v.toString().trim();
+                    break;
+                }
+            }
+        }
+
+        // Find sample name — try known column names
+        const name = (
+            row['Sample Name'] || row['SAMPLE NAME'] || row['Sample name'] ||
+            row['sample name'] || row['Patient Name'] || row['PATIENT NAME'] ||
+            row['Name'] || row['name'] || ''
+        ).toString().trim().toUpperCase();
+
         if (id) lookup[id] = val;
         if (name) lookup[name] = val;
     });
