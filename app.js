@@ -205,6 +205,7 @@ function buildSecondaryLookup(secondaryData) {
 
         // Find Anderson ID — try known column names, then pattern-match cells (AND...)
         let id = (
+            row['Anderson_ID'] || row['ANDERSON_ID'] ||
             row['Anderson ID'] || row['ANDERSON ID'] || row['Anderson id'] ||
             row['anderson id'] || row['AndersonID'] || row['Sample ID'] || row['SAMPLE ID'] || ''
         ).toString().trim();
@@ -248,8 +249,8 @@ async function loadData(forceRefresh = false, silent = false) {
         try { localStorage.setItem(CACHE_KEY, JSON.stringify(rawData)); } catch (e) {}
         applyRawData(rawData);
         const secRows = Array.isArray(rawData) ? [] : (rawData.secondary || []);
-        const secCols = secRows.length > 0 ? Object.keys(secRows[0]).join(' | ') : 'none';
-        if (!silent) showToast(`Columns: ${secCols}`, 'error');
+        const lookup = buildSecondaryLookup(secRows);
+        if (!silent) showToast(`Synced. Secondary: ${secRows.length} rows, ${Object.keys(lookup).length} matched.`);
     } catch (error) {
         console.error('Data Sync Error:', error);
         if (!silent) showToast(`Sync Failed: ${error.message}`, 'error');
