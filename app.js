@@ -196,7 +196,7 @@ function buildSecondaryLookup(secondaryData) {
         // If no history column found, scan every cell for "Writeup available"
         if (!val) {
             const found = Object.values(row).find(
-                v => v && v.toString().trim().toLowerCase() === 'writeup available'
+                v => v && v.toString().trim().toLowerCase().includes('writeup available')
             );
             if (found) val = 'Writeup available';
         }
