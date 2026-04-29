@@ -792,6 +792,17 @@ function openSidePanel(index) {
     document.getElementById('d-trf').textContent = item.trfReport || 'No TRF information found.';
     document.getElementById('d-history').textContent = item.history || 'NO CLINICAL WRITEUP PROVIDED';
     document.getElementById('d-remark').textContent = item.remark || 'No specific registry remarks.';
+    const es = getEmailSentState(item);
+    const reminderRow = document.getElementById('d-reminder-row');
+    const reminderDate = document.getElementById('d-reminder-date');
+    if (reminderRow && reminderDate) {
+        if (es.sent && es.date) {
+            reminderDate.textContent = es.date.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+            reminderRow.style.display = '';
+        } else {
+            reminderRow.style.display = 'none';
+        }
+    }
     updatePanelMailButton(item, index);
     document.getElementById('side-panel').classList.add('open');
     document.getElementById('panel-overlay').classList.add('active');
