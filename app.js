@@ -882,16 +882,23 @@ function getEmailSentState(item) {
     const sheetVal   = item.emailSent && item.emailSent !== '' ? item.emailSent : null;
     const localVal   = localStorage.getItem(`emailSentDate_${item.andersonId}`);
 
+    // Reset boundary: ignore any sheet-recorded sends on or before this date
+    // (testing period purge — only new sends via this tracker count going forward)
+    const RESET_CUTOFF = new Date('2026-04-29T23:59:59');
+
     // Legacy "Yes" with no date — treat as sent but no date
-    if (sheetVal === 'Yes' && !localVal) return { sent: true, date: null, resend: false };
+    if (sheetVal === 'Yes' && !localVal) return { sent: false };
 
     // Pick the most recent valid date from either source
     const sheetDate  = sheetVal && sheetVal !== 'Yes' ? parseDateString(sheetVal) : null;
     const localDate  = localVal ? parseDateString(localVal) : null;
 
+    // Ignore sheet date if it falls within the reset period and no local send exists
+    const effectiveSheetDate = (sheetDate && sheetDate <= RESET_CUTOFF && !localVal) ? null : sheetDate;
+
     let sentDate = null;
-    if (sheetDate && localDate) sentDate = sheetDate >= localDate ? sheetDate : localDate;
-    else sentDate = sheetDate || localDate;
+    if (effectiveSheetDate && localDate) sentDate = effectiveSheetDate >= localDate ? effectiveSheetDate : localDate;
+    else sentDate = effectiveSheetDate || localDate;
 
     if (!sentDate) return { sent: false };
 
