@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
     // One-time reset of sent-reminder history (testing data purge — runs once per device)
-    const SENT_RESET_VER = '2026-04-29-reset';
+    const SENT_RESET_VER = '2026-04-29-v2';
     if (localStorage.getItem('sentResetVer') !== SENT_RESET_VER) {
         Object.keys(localStorage)
             .filter(k => k.startsWith('emailSentDate_') || k.startsWith('emailSent_'))
@@ -694,13 +694,16 @@ function renderPagination(totalItems) {
 function updatePanelMailButton(item, index) {
     const btn = document.getElementById('panel-mail-btn');
     const textEl = document.getElementById('panel-mail-text');
+    const manualBtn = document.getElementById('panel-manual-btn');
     if (!btn || !textEl) return;
 
     if (item.hasHistory) {
         btn.style.display = 'none';
+        if (manualBtn) manualBtn.style.display = 'none';
         return;
     }
 
+    // Auto send button (existing behaviour unchanged)
     btn.style.display = '';
     btn.className = 'btn-panel-mail';
     btn.disabled = false;
@@ -714,11 +717,64 @@ function updatePanelMailButton(item, index) {
         const label = es.date ? `Resend · ${formatSentDate(es.date)}` : 'Resend';
         btn.innerHTML = `<i data-lucide="send"></i><span>${label}</span>`;
     } else {
-        btn.classList.add('resend');
-        const label = es.date ? `Resend · ${formatSentDate(es.date)}` : 'Resend';
-        btn.innerHTML = `<i data-lucide="send"></i><span>${label}</span>`;
+        btn.classList.add('sent');
+        btn.disabled = true;
+        const label = es.date ? `Sent ${formatSentDate(es.date)}` : 'Sent';
+        btn.innerHTML = `<i data-lucide="check"></i><span>${label}</span>`;
     }
+
+    // Manual mail button — always shown for pending samples
+    if (manualBtn) {
+        manualBtn.style.display = '';
+        manualBtn.onclick = (e) => { e.stopPropagation(); openManualMailModal(item); };
+    }
+
     if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function openManualMailModal(item) {
+    const subject = `Action Required: Clinical History Missing for Anderson ID ${item.andersonId}`;
+    const sep = '─'.repeat(58);
+    const body = [
+        'Dear Team,',
+        '',
+        'This is a reminder that the following sample has NO Clinical History recorded.',
+        '',
+        sep,
+        `  Anderson ID   : ${item.andersonId}`,
+        `  Sample Name   : ${item.sampleName}`,
+        `  Client        : ${item.client}`,
+        `  Test          : ${item.testName}`,
+        `  Received Date : ${item.receivedDate}`,
+        `  TAT Date      : ${item.tatDate}`,
+        sep,
+        '',
+        'Kindly provide the Clinical History details at the earliest to avoid',
+        'any delay in processing and releasing the report on time.',
+        '',
+        'Thank you,',
+        'Anderson Lab Reporting System'
+    ].join('\n');
+
+    document.getElementById('manual-to').value = EMAIL_RECIPIENT;
+    document.getElementById('manual-subject').value = subject;
+    document.getElementById('manual-body').value = body;
+    const overlay = document.getElementById('manual-mail-overlay');
+    overlay.style.display = 'flex';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function closeManualMailModal() {
+    document.getElementById('manual-mail-overlay').style.display = 'none';
+}
+
+function openManualMailInGmail() {
+    const to      = document.getElementById('manual-to').value.trim();
+    const subject = document.getElementById('manual-subject').value.trim();
+    const body    = document.getElementById('manual-body').value;
+    const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(url, '_blank');
+    closeManualMailModal();
 }
 
 function openSidePanel(index) {
@@ -845,8 +901,8 @@ function buildMailButton(item, index) {
         const label = es.date ? `Resend · ${formatSentDate(es.date)}` : 'Resend';
         return `<button class="btn-send-mail resend" onclick="event.stopPropagation(); sendSampleReminder(${index}, this)"><i data-lucide="send"></i>${label}</button>`;
     }
-    const label = es.date ? `Resend · ${formatSentDate(es.date)}` : 'Resend';
-    return `<button class="btn-send-mail resend" onclick="event.stopPropagation(); sendSampleReminder(${index}, this)"><i data-lucide="send"></i>${label}</button>`;
+    const label = es.date ? `Sent ${formatSentDate(es.date)}` : 'Sent';
+    return `<button class="btn-send-mail sent" disabled><i data-lucide="check"></i>${label}</button>`;
 }
 
 function getTodayDateStr() {
@@ -976,8 +1032,8 @@ function openTATModal() {
                 const lbl = es.date ? `Resend · ${formatSentDate(es.date)}` : 'Resend';
                 actionBtn = `<button class="btn-modal-send resend" id="ms-${i}" onclick="sendModalReminder(${i}, this)"><i data-lucide="send"></i>${lbl}</button>`;
             } else {
-                const lbl = es.date ? `Resend · ${formatSentDate(es.date)}` : 'Resend';
-                actionBtn = `<button class="btn-modal-send resend" id="ms-${i}" onclick="sendModalReminder(${i}, this)"><i data-lucide="send"></i>${lbl}</button>`;
+                const lbl = es.date ? `Sent ${formatSentDate(es.date)}` : 'Sent';
+                actionBtn = `<button class="btn-modal-send sent" id="ms-${i}" disabled><i data-lucide="check"></i>${lbl}</button>`;
             }
             const tr = document.createElement('tr');
             tr.dataset.index = i;

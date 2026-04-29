@@ -119,6 +119,10 @@
                             <i data-lucide="send"></i>
                             <span id="panel-mail-text">Send Reminder</span>
                         </button>
+                        <button id="panel-manual-btn" class="btn-panel-mail" style="display:none; background:var(--surface-2, #2a2a3a); border:1px solid var(--border);">
+                            <i data-lucide="pencil-line"></i>
+                            <span>Manual Mail</span>
+                        </button>
                         <button id="copy-btn" class="btn-action-pro"><i data-lucide="copy"></i> Copy Writeup</button>
                     </div>
                 </header>
@@ -171,6 +175,34 @@
         </div>
         <div id="panel-overlay" class="panel-overlay"></div>
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    </div>
+
+    <!-- Manual Mail Compose Modal -->
+    <div id="manual-mail-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:var(--surface,#1e1e2e); border-radius:14px; padding:28px; width:580px; max-width:95vw; max-height:90vh; overflow-y:auto; box-shadow:0 24px 64px rgba(0,0,0,0.5); border:1px solid var(--border,#333);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <span style="font-weight:700; font-size:15px; color:var(--text);">Compose Manual Reminder</span>
+                <button onclick="closeManualMailModal()" style="background:none; border:none; cursor:pointer; font-size:22px; color:var(--text-dim); line-height:1;">×</button>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <div>
+                    <div style="font-size:11px; font-weight:700; color:var(--text-dim); margin-bottom:5px; letter-spacing:.06em;">TO</div>
+                    <input id="manual-to" type="email" placeholder="recipient@email.com" style="width:100%; padding:9px 12px; border:1px solid var(--border,#333); border-radius:7px; background:var(--bg,#13131f); color:var(--text); font-size:13px; box-sizing:border-box; outline:none;">
+                </div>
+                <div>
+                    <div style="font-size:11px; font-weight:700; color:var(--text-dim); margin-bottom:5px; letter-spacing:.06em;">SUBJECT</div>
+                    <input id="manual-subject" type="text" style="width:100%; padding:9px 12px; border:1px solid var(--border,#333); border-radius:7px; background:var(--bg,#13131f); color:var(--text); font-size:13px; box-sizing:border-box; outline:none;">
+                </div>
+                <div>
+                    <div style="font-size:11px; font-weight:700; color:var(--text-dim); margin-bottom:5px; letter-spacing:.06em;">MESSAGE</div>
+                    <textarea id="manual-body" rows="13" style="width:100%; padding:9px 12px; border:1px solid var(--border,#333); border-radius:7px; background:var(--bg,#13131f); color:var(--text); font-size:12px; font-family:monospace; box-sizing:border-box; resize:vertical; outline:none; line-height:1.6;"></textarea>
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end;">
+                <button onclick="closeManualMailModal()" style="padding:9px 18px; border:1px solid var(--border,#333); border-radius:7px; background:none; cursor:pointer; color:var(--text); font-size:13px;">Cancel</button>
+                <button onclick="openManualMailInGmail()" style="padding:9px 22px; border:none; border-radius:7px; background:var(--accent,#6c63ff); color:#fff; cursor:pointer; font-weight:700; font-size:13px; display:flex; align-items:center; gap:7px;"><i data-lucide="external-link" style="width:14px;height:14px;"></i> Open in Gmail</button>
+            </div>
+        </div>
     </div>
 
     <!-- TAT Due Modal -->
