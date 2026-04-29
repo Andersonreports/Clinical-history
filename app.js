@@ -247,7 +247,9 @@ async function loadData(forceRefresh = false, silent = false) {
         const rawData = await fetchFromSyncSource();
         try { localStorage.setItem(CACHE_KEY, JSON.stringify(rawData)); } catch (e) {}
         applyRawData(rawData);
-        if (!silent) showToast('Database Synced Successfully.');
+        const secCount = Array.isArray(rawData) ? 0 : (rawData.secondary || []).length;
+        const lookupCount = Array.isArray(rawData) ? 0 : buildSecondaryLookup(rawData.secondary || []);
+        if (!silent) showToast(`Synced. Secondary sheet: ${secCount} rows, ${Object.keys(lookupCount).length} matched keys.`);
     } catch (error) {
         console.error('Data Sync Error:', error);
         if (!silent) showToast(`Sync Failed: ${error.message}`, 'error');
