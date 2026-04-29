@@ -159,7 +159,13 @@ const CACHE_KEY = 'clinicalDataCache';
 function applyRawData(rawData) {
     const primaryData = Array.isArray(rawData) ? rawData : (rawData.primary || rawData);
     const secondaryData = Array.isArray(rawData) ? [] : (rawData.secondary || []);
+    console.log('[Secondary] rows received:', secondaryData.length);
+    if (secondaryData.length > 0) {
+        console.log('[Secondary] first row keys:', Object.keys(secondaryData[0]));
+        console.log('[Secondary] first row values:', Object.values(secondaryData[0]).map(v => String(v).substring(0, 60)));
+    }
     const secondaryLookup = buildSecondaryLookup(secondaryData);
+    console.log('[Secondary] lookup keys built:', Object.keys(secondaryLookup).length, Object.keys(secondaryLookup).slice(0, 5));
     state.data = normalizeData(primaryData, secondaryLookup)
         .filter(item => {
             const parts = item.month.split(' ');
