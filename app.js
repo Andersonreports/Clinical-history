@@ -24,6 +24,16 @@ let state = {
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // One-time reset of sent-reminder history (testing data purge — runs once per device)
+    const SENT_RESET_VER = '2026-04-29-reset';
+    if (localStorage.getItem('sentResetVer') !== SENT_RESET_VER) {
+        Object.keys(localStorage)
+            .filter(k => k.startsWith('emailSentDate_') || k.startsWith('emailSent_'))
+            .forEach(k => localStorage.removeItem(k));
+        localStorage.setItem('sentResetVer', SENT_RESET_VER);
+    }
+
     initEventListeners();
     loadData();
 
@@ -704,10 +714,9 @@ function updatePanelMailButton(item, index) {
         const label = es.date ? `Resend · ${formatSentDate(es.date)}` : 'Resend';
         btn.innerHTML = `<i data-lucide="send"></i><span>${label}</span>`;
     } else {
-        btn.classList.add('sent');
-        btn.disabled = true;
-        const label = es.date ? `Sent ${formatSentDate(es.date)}` : 'Sent';
-        btn.innerHTML = `<i data-lucide="check"></i><span>${label}</span>`;
+        btn.classList.add('resend');
+        const label = es.date ? `Resend · ${formatSentDate(es.date)}` : 'Resend';
+        btn.innerHTML = `<i data-lucide="send"></i><span>${label}</span>`;
     }
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
@@ -836,8 +845,8 @@ function buildMailButton(item, index) {
         const label = es.date ? `Resend · ${formatSentDate(es.date)}` : 'Resend';
         return `<button class="btn-send-mail resend" onclick="event.stopPropagation(); sendSampleReminder(${index}, this)"><i data-lucide="send"></i>${label}</button>`;
     }
-    const label = es.date ? `Sent ${formatSentDate(es.date)}` : 'Sent';
-    return `<button class="btn-send-mail sent" disabled><i data-lucide="check"></i>${label}</button>`;
+    const label = es.date ? `Resend · ${formatSentDate(es.date)}` : 'Resend';
+    return `<button class="btn-send-mail resend" onclick="event.stopPropagation(); sendSampleReminder(${index}, this)"><i data-lucide="send"></i>${label}</button>`;
 }
 
 function getTodayDateStr() {
@@ -967,8 +976,8 @@ function openTATModal() {
                 const lbl = es.date ? `Resend · ${formatSentDate(es.date)}` : 'Resend';
                 actionBtn = `<button class="btn-modal-send resend" id="ms-${i}" onclick="sendModalReminder(${i}, this)"><i data-lucide="send"></i>${lbl}</button>`;
             } else {
-                const lbl = es.date ? `Sent ${formatSentDate(es.date)}` : 'Sent';
-                actionBtn = `<button class="btn-modal-send sent" id="ms-${i}" disabled><i data-lucide="check"></i>${lbl}</button>`;
+                const lbl = es.date ? `Resend · ${formatSentDate(es.date)}` : 'Resend';
+                actionBtn = `<button class="btn-modal-send resend" id="ms-${i}" onclick="sendModalReminder(${i}, this)"><i data-lucide="send"></i>${lbl}</button>`;
             }
             const tr = document.createElement('tr');
             tr.dataset.index = i;
