@@ -248,7 +248,9 @@ async function loadData(forceRefresh = false, silent = false) {
         const rawData = await fetchFromSyncSource();
         try { localStorage.setItem(CACHE_KEY, JSON.stringify(rawData)); } catch (e) {}
         applyRawData(rawData);
-        if (!silent) showToast('Database Synced Successfully.');
+        const _sec = Array.isArray(rawData) ? [] : (rawData.secondary || []);
+        const _wup = _sec.filter(r => Object.values(r).some(v => v && v.toString().toLowerCase().includes('writeup available'))).length;
+        if (!silent) showToast(`Synced. Secondary: ${_sec.length} rows, ${_wup} with writeup.`);
     } catch (error) {
         console.error('Data Sync Error:', error);
         if (!silent) showToast(`Sync Failed: ${error.message}`, 'error');
