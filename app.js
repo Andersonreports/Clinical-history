@@ -175,9 +175,21 @@ function buildSecondaryLookup(secondaryData) {
     const lookup = {};
     if (!Array.isArray(secondaryData)) return lookup;
     secondaryData.forEach(row => {
+        // Check clinical history writeup column first
         const h = row['Clinical History writeup'] || row['CLINICAL HISTORY WRITEUP'] ||
-                  row['Clinical history writeup'] || row['clinical history writeup'] || '';
-        const val = h.toString().trim();
+                  row['Clinical history writeup'] || row['clinical history writeup'] ||
+                  row['History writeup'] || row['HISTORY WRITEUP'] ||
+                  row['History Writeup'] || row['history writeup'] || '';
+        let val = h.toString().trim();
+
+        // If no writeup text, scan all columns for "Writeup available"
+        if (!val || val.toLowerCase() === 'nan') {
+            const hasWriteupAvailable = Object.values(row).some(
+                v => v && v.toString().trim().toLowerCase() === 'writeup available'
+            );
+            if (hasWriteupAvailable) val = 'Writeup available';
+        }
+
         if (!val || val.toLowerCase() === 'nan') return;
         const id = (row['Anderson ID'] || row['ANDERSON ID'] || '').toString().trim();
         const name = (row['Sample Name'] || row['SAMPLE NAME'] || '').toString().trim().toUpperCase();
