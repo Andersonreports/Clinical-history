@@ -24,6 +24,17 @@ body {
     flex-direction: column;
 }
 
+/* Back to home button */
+.back-to-home {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(92,103,242,.1); border: 1.5px solid rgba(92,103,242,.2);
+    color: var(--primary); text-decoration: none; flex-shrink: 0;
+    transition: all .2s ease;
+}
+.back-to-home:hover { background: var(--primary); color: #fff; border-color: var(--primary); transform: translateX(-2px); }
+.back-to-home [data-lucide] { width: 15px; height: 15px; }
+
 /* Top Banner - Utilized Space */
 .top-page-banner {
     width: 100%;
