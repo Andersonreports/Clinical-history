@@ -200,28 +200,28 @@
 
     <!-- Manual Mail Compose Modal -->
     <div id="manual-mail-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:9999; align-items:center; justify-content:center;">
-        <div style="background:var(--surface,#1e1e2e); border-radius:14px; padding:28px; width:580px; max-width:95vw; max-height:90vh; overflow-y:auto; box-shadow:0 24px 64px rgba(0,0,0,0.5); border:1px solid var(--border,#333);">
+        <div style="background:rgba(19,20,37,0.98); border-radius:16px; padding:28px; width:580px; max-width:95vw; max-height:90vh; overflow-y:auto; box-shadow:0 32px 80px rgba(0,0,0,0.7); border:1px solid rgba(255,255,255,0.1);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <span style="font-weight:700; font-size:15px; color:var(--text);">Compose Manual Reminder</span>
-                <button onclick="closeManualMailModal()" style="background:none; border:none; cursor:pointer; font-size:22px; color:var(--text-dim); line-height:1;">×</button>
+                <span style="font-weight:700; font-size:15px; color:#e8eaff;">Compose Manual Reminder</span>
+                <button onclick="closeManualMailModal()" style="background:none; border:none; cursor:pointer; font-size:22px; color:#6e76a8; line-height:1;">×</button>
             </div>
             <div style="display:flex; flex-direction:column; gap:12px;">
                 <div>
-                    <div style="font-size:11px; font-weight:700; color:var(--text-dim); margin-bottom:5px; letter-spacing:.06em;">TO</div>
-                    <input id="manual-to" type="email" placeholder="recipient@email.com" style="width:100%; padding:9px 12px; border:1px solid var(--border,#333); border-radius:7px; background:var(--bg,#13131f); color:var(--text); font-size:13px; box-sizing:border-box; outline:none;">
+                    <div style="font-size:11px; font-weight:700; color:#6e76a8; margin-bottom:5px; letter-spacing:.06em;">TO</div>
+                    <input id="manual-to" type="email" placeholder="recipient@email.com" style="width:100%; padding:9px 12px; border:1px solid rgba(255,255,255,0.1); border-radius:9px; background:rgba(255,255,255,0.05); color:#e8eaff; font-size:13px; box-sizing:border-box; outline:none; font-family:'Outfit',sans-serif;">
                 </div>
                 <div>
-                    <div style="font-size:11px; font-weight:700; color:var(--text-dim); margin-bottom:5px; letter-spacing:.06em;">SUBJECT</div>
-                    <input id="manual-subject" type="text" style="width:100%; padding:9px 12px; border:1px solid var(--border,#333); border-radius:7px; background:var(--bg,#13131f); color:var(--text); font-size:13px; box-sizing:border-box; outline:none;">
+                    <div style="font-size:11px; font-weight:700; color:#6e76a8; margin-bottom:5px; letter-spacing:.06em;">SUBJECT</div>
+                    <input id="manual-subject" type="text" style="width:100%; padding:9px 12px; border:1px solid rgba(255,255,255,0.1); border-radius:9px; background:rgba(255,255,255,0.05); color:#e8eaff; font-size:13px; box-sizing:border-box; outline:none; font-family:'Outfit',sans-serif;">
                 </div>
                 <div>
-                    <div style="font-size:11px; font-weight:700; color:var(--text-dim); margin-bottom:5px; letter-spacing:.06em;">MESSAGE</div>
-                    <textarea id="manual-body" rows="13" style="width:100%; padding:9px 12px; border:1px solid var(--border,#333); border-radius:7px; background:var(--bg,#13131f); color:var(--text); font-size:12px; font-family:monospace; box-sizing:border-box; resize:vertical; outline:none; line-height:1.6;"></textarea>
+                    <div style="font-size:11px; font-weight:700; color:#6e76a8; margin-bottom:5px; letter-spacing:.06em;">MESSAGE</div>
+                    <textarea id="manual-body" rows="13" style="width:100%; padding:9px 12px; border:1px solid rgba(255,255,255,0.1); border-radius:9px; background:rgba(255,255,255,0.05); color:#e8eaff; font-size:12px; font-family:monospace; box-sizing:border-box; resize:vertical; outline:none; line-height:1.6;"></textarea>
                 </div>
             </div>
             <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end;">
-                <button onclick="closeManualMailModal()" style="padding:9px 18px; border:1px solid var(--border,#333); border-radius:7px; background:none; cursor:pointer; color:var(--text); font-size:13px;">Cancel</button>
-                <button onclick="openManualMailInGmail()" style="padding:9px 22px; border:none; border-radius:7px; background:var(--accent,#6c63ff); color:#fff; cursor:pointer; font-weight:700; font-size:13px; display:flex; align-items:center; gap:7px;"><i data-lucide="external-link" style="width:14px;height:14px;"></i> Open in Gmail</button>
+                <button onclick="closeManualMailModal()" style="padding:9px 18px; border:1px solid rgba(255,255,255,0.12); border-radius:9px; background:none; cursor:pointer; color:#e8eaff; font-size:13px; font-family:'Outfit',sans-serif;">Cancel</button>
+                <button onclick="openManualMailInGmail()" style="padding:9px 22px; border:none; border-radius:9px; background:linear-gradient(135deg,#7c6fff,#a898ff); color:#fff; cursor:pointer; font-weight:700; font-size:13px; font-family:'Outfit',sans-serif; display:flex; align-items:center; gap:7px; box-shadow:0 6px 20px rgba(124,111,255,0.4);"><i data-lucide="external-link" style="width:14px;height:14px;"></i> Open in Gmail</button>
             </div>
         </div>
     </div>
