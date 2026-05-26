@@ -115,11 +115,6 @@ body {
     box-shadow: 0 4px 14px rgba(191,75,44,0.36);
     display: flex; align-items: center; justify-content: center;
 }
-.brand-icon-svg {
-    width: 18px; height: 18px;
-    stroke: rgba(255,255,255,0.95);
-    stroke-width: 2.2;
-}
 .sidebar-brand-name { font-size: 14px; font-weight: 800; color: var(--text-main); line-height: 1.2; }
 .sidebar-brand-sub  { font-size: 10px; font-weight: 500; color: var(--text-dim); }
 
