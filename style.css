@@ -61,7 +61,7 @@ body {
     font-size: 13px; font-weight: 600; color: var(--text-dim);
 }
 .breadcrumb-sep { opacity: 0.5; }
-.breadcrumb-current { color: var(--text-main); font-weight: 700; font-size: 14px; }
+.breadcrumb-current { color: var(--text-main); font-weight: 800; font-size: 20px; }
 
 /* Banner buttons */
 .btn-sync-compact {
