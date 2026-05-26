@@ -174,7 +174,7 @@ body {
 .dashboard-grid { display: flex; gap: 16px; margin-bottom: 16px; }
 
 .pro-card {
-    flex: 1; border-radius: 16px; padding: 20px 22px 0;
+    flex: 1; border-radius: 16px; padding: 20px 22px;
     display: flex; flex-direction: column; gap: 0;
     cursor: pointer; transition: transform 0.22s, box-shadow 0.22s;
     background: var(--surface);
@@ -192,10 +192,13 @@ body {
 .pro-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .pro-card.active { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 
-/* Top row: icon left, badge right */
+/* Top row: [icon + text] left, badge right */
 .card-top-row {
-    display: flex; justify-content: space-between; align-items: flex-start;
-    margin-bottom: 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 0;
+}
+.card-left {
+    display: flex; align-items: center; gap: 14px;
 }
 .card-icon-box {
     width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
@@ -211,7 +214,7 @@ body {
 .badge-ok     { background: rgba(58,158,126,0.1);  color: var(--c-success); }
 .badge-danger { background: rgba(217,96,112,0.1); color: var(--c-danger); }
 
-.card-text-area { display: flex; flex-direction: column; gap: 4px; padding-bottom: 18px; }
+.card-text-area { display: flex; flex-direction: column; gap: 4px; }
 
 .pro-card h2 {
     font-size: 20px; font-weight: 800; color: var(--text-main);
@@ -529,7 +532,7 @@ body {
   .sidebar-overlay.active { display: block; }
   .app-main { padding: 12px 12px; overflow: visible; height: auto; }
   .dashboard-grid { gap: 8px; }
-  .pro-card { flex: 1; min-width: 0; padding: 12px 14px 0; border-radius: 12px; }
+  .pro-card { flex: 1; min-width: 0; padding: 12px 14px; border-radius: 12px; }
   .card-icon-box { width: 36px; height: 36px; border-radius: 9px; }
   .pro-card h2 { font-size: 17px; }
   .pro-card p { font-size: 13px; }
