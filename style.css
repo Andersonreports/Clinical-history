@@ -214,11 +214,11 @@ body {
 .card-text-area { display: flex; flex-direction: column; gap: 4px; padding-bottom: 18px; }
 
 .pro-card h2 {
-    font-size: 40px; font-weight: 800; color: var(--text-main);
+    font-size: 20px; font-weight: 800; color: var(--text-main);
     line-height: 1;
 }
 .pro-card p {
-    font-size: 13px; font-weight: 500; color: var(--text-dim);
+    font-size: 17px; font-weight: 700; color: var(--text-dim);
     text-transform: none; letter-spacing: 0;
 }
 
@@ -531,8 +531,8 @@ body {
   .dashboard-grid { gap: 8px; }
   .pro-card { flex: 1; min-width: 0; padding: 12px 14px 0; border-radius: 12px; }
   .card-icon-box { width: 36px; height: 36px; border-radius: 9px; }
-  .pro-card h2 { font-size: 24px; }
-  .pro-card p { font-size: 10px; }
+  .pro-card h2 { font-size: 17px; }
+  .pro-card p { font-size: 13px; }
   .card-badge { display: none; }
   .control-row { flex-direction: column; gap: 10px; align-items: stretch; }
   .filters-wrapper { flex-wrap: wrap; gap: 8px; }
