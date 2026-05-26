@@ -141,6 +141,11 @@ function restoreAllRecords() {
     const sidebarAll = document.getElementById('sidebar-all-records');
     if (sidebarAll) sidebarAll.classList.add('active');
 
+    // Reset table status tabs
+    document.querySelectorAll('.status-tab').forEach(t => t.classList.remove('active'));
+    const tabAll = document.getElementById('tab-all');
+    if (tabAll) tabAll.classList.add('active');
+
     applyFilters();
     showToast('Viewing All Records');
 }
@@ -685,6 +690,14 @@ function renderGrid() {
     });
     const infoEl = document.getElementById('pagination-info');
     if (infoEl) infoEl.textContent = `Displaying ${state.filteredData.length} records`;
+
+    // Update table section subtitle
+    const subEl = document.getElementById('table-section-sub');
+    if (subEl) {
+        const monthLabel = state.filters.month === 'all' ? 'All months' : state.filters.month;
+        subEl.textContent = `Showing ${monthLabel} · ${state.filteredData.length} entries`;
+    }
+
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
@@ -1202,6 +1215,25 @@ async function sendAllTATReminders(btn) {
     if (btnText) btnText.textContent = `Done — ${sent} sent${failed > 0 ? `, ${failed} failed` : ''}`;
     showToast(`${sent} reminder${sent !== 1 ? 's' : ''} sent successfully.`);
     updateTatDueCount();
+}
+
+function filterToPending() {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const el = document.getElementById('sidebar-pending-item');
+    if (el) el.classList.add('active');
+    updateCardActiveState('needed');
+    state.filters.status = 'needed';
+    state.currentPage = 1;
+    applyFilters();
+}
+
+function switchStatusTab(status, btn) {
+    document.querySelectorAll('.status-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    updateCardActiveState(status === 'all' ? 'all' : status === 'available' ? 'available' : 'needed');
+    state.filters.status = status;
+    state.currentPage = 1;
+    applyFilters();
 }
 
 function toggleSidebar() {

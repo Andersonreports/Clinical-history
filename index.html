@@ -43,28 +43,37 @@
             <!-- Interactive Dashboard Stats (Primary View Selectors) -->
             <section class="dashboard-grid">
                 <div class="pro-card card-total active" id="btn-stat-total">
-                    <div class="card-icon-box"></div>
+                    <div class="card-top-row">
+                        <div class="card-icon-box"></div>
+                        <span class="card-badge badge-ok">All entries</span>
+                    </div>
                     <div class="card-text-area">
                         <h2 id="stat-total">0</h2>
-                        <p>Total Records</p>
-                        <span class="card-sub">All entries</span>
+                        <p>Total records</p>
                     </div>
+                    <div class="card-bar"></div>
                 </div>
                 <div class="pro-card card-success" id="btn-stat-complete">
-                    <div class="card-icon-box"></div>
+                    <div class="card-top-row">
+                        <div class="card-icon-box"></div>
+                        <span class="card-badge badge-ok" id="coverage-sub">— % coverage</span>
+                    </div>
                     <div class="card-text-area">
                         <h2 id="stat-complete">0</h2>
-                        <p>History Available</p>
-                        <span class="card-sub" id="coverage-sub">— % coverage</span>
+                        <p>History available</p>
                     </div>
+                    <div class="card-bar"></div>
                 </div>
                 <div class="pro-card card-danger" id="btn-stat-pending">
-                    <div class="card-icon-box"></div>
+                    <div class="card-top-row">
+                        <div class="card-icon-box"></div>
+                        <span class="card-badge badge-danger">Needs attention</span>
+                    </div>
                     <div class="card-text-area">
                         <h2 id="stat-pending">0</h2>
-                        <p>History Required</p>
-                        <span class="card-sub">Needs attention</span>
+                        <p>History required</p>
                     </div>
+                    <div class="card-bar"></div>
                 </div>
             </section>
 
@@ -85,6 +94,17 @@
 
             <!-- Data Surface -->
             <div class="data-surface">
+                <div class="table-header-section">
+                    <div>
+                        <div class="table-section-title">Patient records</div>
+                        <div class="table-section-sub" id="table-section-sub">Loading…</div>
+                    </div>
+                    <div class="table-status-tabs">
+                        <button class="status-tab active" id="tab-all"       onclick="switchStatusTab('all',       this)">All</button>
+                        <button class="status-tab"        id="tab-completed" onclick="switchStatusTab('available', this)">Completed</button>
+                        <button class="status-tab"        id="tab-pending"   onclick="switchStatusTab('needed',    this)">Pending</button>
+                    </div>
+                </div>
                 <div class="surface-table-container">
                     <table class="pro-table">
                         <thead>
@@ -114,15 +134,34 @@
         <aside class="app-sidebar">
             <div class="sidebar-brand">
                 <div class="sidebar-brand-icon"></div>
-                <span>Clinical OS</span>
+                <div>
+                    <div class="sidebar-brand-name">Clinical OS</div>
+                    <div class="sidebar-brand-sub">Lab management</div>
+                </div>
             </div>
             <nav class="month-nav" id="sidebar-months">
                 <div class="nav-label">Global View</div>
                 <div class="nav-item active" id="sidebar-all-records" data-month="all">
-                    <span>All Records</span><div class="nav-dot"></div>
+                    <span>All records</span><div class="nav-dot"></div>
+                </div>
+                <div class="nav-item" id="sidebar-pending-item" onclick="filterToPending()">
+                    <span>Pending</span><div class="nav-dot"></div>
+                </div>
+                <div class="nav-item nav-static">
+                    <span>Analytics</span><div class="nav-dot"></div>
+                </div>
+                <div class="nav-item nav-static">
+                    <span>Settings</span><div class="nav-dot"></div>
                 </div>
                 <!-- Months injected here -->
             </nav>
+            <div class="sidebar-user">
+                <div class="user-avatar">A</div>
+                <div class="user-info">
+                    <div class="user-name">Dr. Anita R.</div>
+                    <div class="user-role">Lab admin</div>
+                </div>
+            </div>
         </aside>
 
         <!-- Side Panel -->
