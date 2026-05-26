@@ -15,13 +15,16 @@
     <!-- Top Center Title Banner -->
     <div class="top-page-banner">
         <div class="banner-content">
-            <div style="display:flex;align-items:center;gap:10px;">
+            <div class="breadcrumb-nav">
                 <a href="https://tera-report-automation.onrender.com/?section=trackers&amp;team=bioinfo" onclick="event.preventDefault();history.back()" class="back-to-home" title="Back to Bioinfo Team">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                 </a>
-                <h1>Clinical History Tracker</h1>
+                <span>Dashboard</span>
+                <span class="breadcrumb-sep">›</span>
+                <span class="breadcrumb-current">Clinical History Tracker</span>
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
+                <button class="btn-export" onclick="exportData()">Export</button>
                 <button id="sync-btn" class="btn-sync-compact">
                     <i data-lucide="refresh-cw"></i>
                     <span id="sync-text">Refresh Data</span>
@@ -40,19 +43,28 @@
             <!-- Interactive Dashboard Stats (Primary View Selectors) -->
             <section class="dashboard-grid">
                 <div class="pro-card card-total active" id="btn-stat-total">
-                    <p>Total Records</p>
-                    <h2 id="stat-total">0</h2>
-                    <div class="active-indicator"></div>
+                    <div class="card-icon-box"></div>
+                    <div class="card-text-area">
+                        <h2 id="stat-total">0</h2>
+                        <p>Total Records</p>
+                        <span class="card-sub">All entries</span>
+                    </div>
                 </div>
                 <div class="pro-card card-success" id="btn-stat-complete">
-                    <p>History Available</p>
-                    <h2 id="stat-complete">0</h2>
-                    <div class="active-indicator"></div>
+                    <div class="card-icon-box"></div>
+                    <div class="card-text-area">
+                        <h2 id="stat-complete">0</h2>
+                        <p>History Available</p>
+                        <span class="card-sub" id="coverage-sub">— % coverage</span>
+                    </div>
                 </div>
                 <div class="pro-card card-danger" id="btn-stat-pending">
-                    <p>History Required</p>
-                    <h2 id="stat-pending">0</h2>
-                    <div class="active-indicator"></div>
+                    <div class="card-icon-box"></div>
+                    <div class="card-text-area">
+                        <h2 id="stat-pending">0</h2>
+                        <p>History Required</p>
+                        <span class="card-sub">Needs attention</span>
+                    </div>
                 </div>
             </section>
 
@@ -80,10 +92,10 @@
                                 <th>Patient Identity</th>
                                 <th>Anderson ID</th>
                                 <th>Test Information</th>
-                                <th>Received Date</th>
+                                <th>Received</th>
                                 <th>TAT Date</th>
-                                <th>Clinical Status</th>
-                                <th style="text-align: right;">Action</th>
+                                <th>Status</th>
+                                <th style="text-align: right;"></th>
                             </tr>
                         </thead>
                         <tbody id="grid-body">
@@ -98,16 +110,16 @@
             </div>
         </main>
 
-        <!-- Sidebar Navigation (Right) -->
+        <!-- Sidebar Navigation (Left) -->
         <aside class="app-sidebar">
             <div class="sidebar-brand">
-                <i data-lucide="activity"></i>
+                <div class="sidebar-brand-icon"></div>
                 <span>Clinical OS</span>
             </div>
             <nav class="month-nav" id="sidebar-months">
                 <div class="nav-label">Global View</div>
                 <div class="nav-item active" id="sidebar-all-records" data-month="all">
-                    <i data-lucide="globe"></i> <span>All Records</span>
+                    <span>All Records</span><div class="nav-dot"></div>
                 </div>
                 <!-- Months injected here -->
             </nav>

@@ -517,11 +517,12 @@ function populateSidebar() {
         const item = document.createElement('div');
         item.className = `nav-item ${state.filters.month === m ? 'active' : ''}`;
         item.dataset.month = m;
-        item.innerHTML = `<i data-lucide="calendar"></i> <span>${m}</span>`;
+        const label = m.replace(/^([A-Z]{3}) (\d{4})$/, (_, mo, yr) =>
+            mo.charAt(0) + mo.slice(1).toLowerCase() + ' ' + yr);
+        item.innerHTML = `<span>${label}</span><div class="nav-dot"></div>`;
         item.onclick = () => selectMonth(m, item);
         nav.appendChild(item);
     });
-    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function selectMonth(m, el) {
@@ -567,6 +568,29 @@ function updateStats() {
     if (sTotal) sTotal.textContent = total;
     if (sComplete) sComplete.textContent = complete;
     if (sPending) sPending.textContent = pending;
+    const coverageSub = document.getElementById('coverage-sub');
+    if (coverageSub) {
+        const pct = total > 0 ? Math.round((complete / total) * 100) : 0;
+        coverageSub.textContent = `${pct}% coverage`;
+    }
+}
+
+function exportData() {
+    const rows = [['Patient Name', 'Anderson ID', 'Test Category', 'Test Name', 'Client', 'Received Date', 'TAT Date', 'Status', 'Month']];
+    state.filteredData.forEach(item => {
+        rows.push([
+            item.sampleName, item.andersonId, item.testCategory, item.testName,
+            item.client, item.receivedDate, item.tatDate,
+            item.hasHistory ? 'Completed' : 'Action Required', item.month
+        ]);
+    });
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'clinical-history-export.csv'; a.click();
+    URL.revokeObjectURL(url);
+    showToast('Exported ' + state.filteredData.length + ' records');
 }
 
 function updateTatDueCount() {
@@ -640,21 +664,21 @@ function renderGrid() {
             </td>
             <td><code class="token-id">${item.andersonId}</code></td>
             <td>
-                <div style="display:flex; flex-direction:column; gap:4px;">
+                <div style="display:flex; flex-direction:column; gap:3px;">
                     <span class="type-badge">${item.testCategory}</span>
                     <span style="font-size:11px; color:var(--text-dim); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.testName}</span>
                 </div>
             </td>
-            <td style="font-weight:600; font-size:12px; white-space:nowrap; min-width:110px;">${item.receivedDate}</td>
-            <td style="font-weight:600; font-size:12px; white-space:nowrap; min-width:110px;">${item.tatDate}</td>
+            <td style="font-weight:600; font-size:12px; white-space:nowrap; color:var(--text-dim);">${item.receivedDate}</td>
+            <td style="font-weight:600; font-size:12px; white-space:nowrap; color:var(--text-dim);">${item.tatDate}</td>
             <td>
-                <div class="status-dot-badge">
-                    <div class="dot ${item.hasHistory ? 'ok' : 'missing'}"></div>
+                <div class="status-pill ${item.hasHistory ? 'pill-ok' : 'pill-missing'}">
+                    <div class="pill-dot"></div>
                     <span>${item.hasHistory ? 'Completed' : 'Action Required'}</span>
                 </div>
             </td>
             <td style="text-align:right; white-space:nowrap;">
-                <button class="btn-sync-compact" style="padding: 4px 10px; font-size:10px;">DETAILS</button>
+                <button class="btn-details">Details</button>
             </td>
         `;
         body.appendChild(tr);
@@ -1187,6 +1211,9 @@ function toggleSidebar() {
     sidebar.classList.toggle('open');
     if (overlay) overlay.classList.toggle('active');
 }
+
+/* expose exportData globally */
+window.exportData = exportData;
 
 async function syncData(silent = false) {
     await loadData(true, silent);
