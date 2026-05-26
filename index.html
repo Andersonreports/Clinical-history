@@ -134,15 +134,16 @@
         <aside class="app-sidebar">
             <div class="sidebar-brand">
                 <div class="sidebar-brand-icon">
+                    <!-- Vertical DNA double helix: strands cross at y≈8 and y≈16 -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M2 15c6.667-6 13.333 0 20-6"/>
-                        <path d="M2 9c6.667 6 13.333 0 20 6"/>
-                        <path d="M2 3c6.667 6 13.333 0 20 6"/>
-                        <path d="M2 21c6.667-6 13.333 0 20-6"/>
-                        <line x1="2" y1="3" x2="2" y2="9"/>
-                        <line x1="22" y1="3" x2="22" y2="9"/>
-                        <line x1="2" y1="15" x2="2" y2="21"/>
-                        <line x1="22" y1="15" x2="22" y2="21"/>
+                        <!-- Strand 1: starts left, crosses to right, crosses back to left -->
+                        <path d="M6 2 C6 8 18 8 18 12 C18 16 6 16 6 22"/>
+                        <!-- Strand 2: starts right, crosses to left, crosses back to right -->
+                        <path d="M18 2 C18 8 6 8 6 12 C6 16 18 16 18 22"/>
+                        <!-- Rungs at the 3 spread-apart positions -->
+                        <line x1="6" y1="4"  x2="18" y2="4"/>
+                        <line x1="6" y1="12" x2="18" y2="12"/>
+                        <line x1="6" y1="20" x2="18" y2="20"/>
                     </svg>
                 </div>
                 <div>
