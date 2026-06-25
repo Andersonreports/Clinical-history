@@ -25,6 +25,39 @@ function isRelevantSheet(sheetName) {
   return parseInt(yearMatch[0]) >= 2026;
 }
 
+// Finds the row for andersonId across all relevant month tabs and stamps
+// today's date into its "Email Sent" column, so every user who syncs sees it.
+function markEmailSentInSheet(andersonId) {
+  if (!andersonId) return null;
+  var target = andersonId.toString().trim().toLowerCase();
+  var sentOn = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd-MM-yyyy");
+  var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
+
+  for (var s = 0; s < sheets.length; s++) {
+    var sheet = sheets[s];
+    if (!isRelevantSheet(sheet.getName())) continue;
+
+    var lastRow = sheet.getLastRow();
+    var lastCol = sheet.getLastColumn();
+    if (lastRow < 2 || lastCol < 1) continue;
+
+    var values   = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+    var headers  = values[0].map(function (h) { return h.toString().trim().toLowerCase(); });
+    var idCol    = headers.indexOf("anderson id");
+    var sentCol  = headers.indexOf("email sent");
+    if (idCol === -1 || sentCol === -1) continue;
+
+    for (var r = 1; r < values.length; r++) {
+      var cellId = values[r][idCol] ? values[r][idCol].toString().trim().toLowerCase() : "";
+      if (cellId === target) {
+        sheet.getRange(r + 1, sentCol + 1).setValue(sentOn);
+        return sentOn;
+      }
+    }
+  }
+  return null; // no matching row found in any sheet
+}
+
 function doGet(e) {
   // Handle email send action from the tracker
   if (e && e.parameter && e.parameter.action === 'sendReminder') {
@@ -39,7 +72,8 @@ function doGet(e) {
         daysUntilTAT = Math.floor((tatParsed - today) / (1000 * 60 * 60 * 24));
       } catch (ex) {}
       sendAlertEmail(p.andersonId, p.sampleName, p.client, p.testName, p.receivedDate, p.tatDate, daysUntilTAT);
-      return ContentService.createTextOutput(JSON.stringify({ success: true }))
+      var sentOn = markEmailSentInSheet(p.andersonId);
+      return ContentService.createTextOutput(JSON.stringify({ success: true, sentOn: sentOn }))
         .setMimeType(ContentService.MimeType.JSON);
     } catch (err) {
       return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
@@ -122,8 +156,9 @@ function doPost(e) {
     } catch (ex) {}
 
     sendAlertEmail(andersonId, sampleName, client, testName, receivedDate, tatDate, daysUntilTAT);
+    var sentOn = markEmailSentInSheet(andersonId);
 
-    return ContentService.createTextOutput(JSON.stringify({ success: true }))
+    return ContentService.createTextOutput(JSON.stringify({ success: true, sentOn: sentOn }))
       .setMimeType(ContentService.MimeType.JSON)
 ;
 
