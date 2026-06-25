@@ -106,6 +106,18 @@ function doGet(e) {
       var values = range.getValues();
       if (values.length < 2) return;
 
+      // Expand merged cells: couple-sample rows share one merged cell for
+      // clinical history — getValues() only fills the top-left cell, leaving
+      // the rest blank. Propagate the top-left value to every cell in each merge.
+      range.getMergedRanges().forEach(function(mr) {
+        var r0 = mr.getRow() - 1, c0 = mr.getColumn() - 1;
+        var rN = r0 + mr.getNumRows(), cN = c0 + mr.getNumColumns();
+        var topVal = values[r0][c0];
+        for (var r = r0; r < rN; r++)
+          for (var c = c0; c < cN; c++)
+            values[r][c] = topVal;
+      });
+
       var headers = values[0].map(function(h) {
         return h.toString().trim();
       });
@@ -242,8 +254,20 @@ function calculateTATDateFromReceived(receivedVal, testName) {
 // Set trigger: Extensions > Apps Script > Triggers > andersonLabClinicalHistoryAlert
 // =============================================
 function andersonLabClinicalHistoryAlert() {
-  var sheet   = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var data    = sheet.getDataRange().getValues();
+  var sheet     = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var dataRange = sheet.getDataRange();
+  var data      = dataRange.getValues();
+
+  // Expand merged cells so couple-sample rows inherit the shared history value
+  dataRange.getMergedRanges().forEach(function(mr) {
+    var r0 = mr.getRow() - 1, c0 = mr.getColumn() - 1;
+    var rN = r0 + mr.getNumRows(), cN = c0 + mr.getNumColumns();
+    var topVal = data[r0][c0];
+    for (var r = r0; r < rN; r++)
+      for (var c = c0; c < cN; c++)
+        data[r][c] = topVal;
+  });
+
   var headers = data[0];
 
   var colIndex = {};
