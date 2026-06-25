@@ -102,6 +102,11 @@
                     </select>
                     <div class="tat-badge" id="tat-due-count" onclick="openTATModal()" style="cursor:pointer;">Due in 10 days: 0</div>
                 </div>
+                <div class="table-status-tabs">
+                    <button class="status-tab active" id="tab-all"       onclick="switchStatusTab('all',       this)">All</button>
+                    <button class="status-tab"        id="tab-completed" onclick="switchStatusTab('available', this)">Completed</button>
+                    <button class="status-tab"        id="tab-pending"   onclick="switchStatusTab('needed',    this)">Pending</button>
+                </div>
             </div>
 
             <!-- Data Surface -->
@@ -110,11 +115,6 @@
                     <div>
                         <div class="table-section-title">Patient records</div>
                         <div class="table-section-sub" id="table-section-sub">Loading…</div>
-                    </div>
-                    <div class="table-status-tabs">
-                        <button class="status-tab active" id="tab-all"       onclick="switchStatusTab('all',       this)">All</button>
-                        <button class="status-tab"        id="tab-completed" onclick="switchStatusTab('available', this)">Completed</button>
-                        <button class="status-tab"        id="tab-pending"   onclick="switchStatusTab('needed',    this)">Pending</button>
                     </div>
                 </div>
                 <div class="surface-table-container">
