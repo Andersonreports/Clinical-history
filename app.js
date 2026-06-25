@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
     // One-time reset of sent-reminder history (testing data purge — runs once per device)
-    const SENT_RESET_VER = '2026-04-29-v2';
+    const SENT_RESET_VER = '2026-06-25-v3';
     if (localStorage.getItem('sentResetVer') !== SENT_RESET_VER) {
         Object.keys(localStorage)
             .filter(k => k.startsWith('emailSentDate_') || k.startsWith('emailSent_'))
