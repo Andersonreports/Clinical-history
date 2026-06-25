@@ -106,10 +106,9 @@ function doGet(e) {
       var values = range.getValues();
       if (values.length < 2) return;
 
-      // Expand merged cells: couple-sample rows share one merged cell for
-      // clinical history — getValues() only fills the top-left cell, leaving
-      // the rest blank. Propagate the top-left value to every cell in each merge.
-      range.getMergedRanges().forEach(function(mr) {
+      // Step 1 — Expand all merged cells (top-left value fills every cell in merge)
+      var mergedRanges = range.getMergedRanges();
+      mergedRanges.forEach(function(mr) {
         var r0 = mr.getRow() - 1, c0 = mr.getColumn() - 1;
         var rN = r0 + mr.getNumRows(), cN = c0 + mr.getNumColumns();
         var topVal = values[r0][c0];
@@ -121,6 +120,34 @@ function doGet(e) {
       var headers = values[0].map(function(h) {
         return h.toString().trim();
       });
+
+      // Step 2 — Couple/trio samples: the Remark column cells are merged across
+      // the related rows. When the remark is merged, find whichever row has the
+      // clinical history writeup and copy it to all rows in that group so every
+      // partner row shows "history available" in the tracker.
+      var headersLower = headers.map(function(h) { return h.toLowerCase(); });
+      var remarkColIdx  = headersLower.findIndex(function(h) { return h.indexOf('remark') !== -1; });
+      var historyColIdx = headersLower.findIndex(function(h) { return h.indexOf('clinical history') !== -1; });
+      if (remarkColIdx !== -1 && historyColIdx !== -1) {
+        mergedRanges.forEach(function(mr) {
+          var r0 = mr.getRow() - 1, c0 = mr.getColumn() - 1;
+          var rN = r0 + mr.getNumRows(), cN = c0 + mr.getNumColumns();
+          // Only process multi-row merges that cover the remark column (skip header row)
+          if (r0 === 0 || mr.getNumRows() < 2) return;
+          if (c0 > remarkColIdx || cN <= remarkColIdx) return;
+          // Find whichever row in this group has the clinical history
+          var sharedHistory = '';
+          for (var r = r0; r < rN; r++) {
+            var h = values[r][historyColIdx];
+            if (h && h.toString().trim() !== '') { sharedHistory = h; break; }
+          }
+          // Copy it to all partner rows
+          if (sharedHistory) {
+            for (var r = r0; r < rN; r++)
+              values[r][historyColIdx] = sharedHistory;
+          }
+        });
+      }
 
       for (var i = 1; i < values.length; i++) {
         var row = values[i];
@@ -258,8 +285,9 @@ function andersonLabClinicalHistoryAlert() {
   var dataRange = sheet.getDataRange();
   var data      = dataRange.getValues();
 
-  // Expand merged cells so couple-sample rows inherit the shared history value
-  dataRange.getMergedRanges().forEach(function(mr) {
+  // Step 1 — Expand all merged cells
+  var mergedRanges = dataRange.getMergedRanges();
+  mergedRanges.forEach(function(mr) {
     var r0 = mr.getRow() - 1, c0 = mr.getColumn() - 1;
     var rN = r0 + mr.getNumRows(), cN = c0 + mr.getNumColumns();
     var topVal = data[r0][c0];
@@ -269,6 +297,30 @@ function andersonLabClinicalHistoryAlert() {
   });
 
   var headers = data[0];
+
+  // Step 2 — For couple/trio samples (Remark column merged across rows),
+  // propagate the clinical history from whichever row has it to all partner rows
+  // so the nightly trigger doesn't send alerts for samples already covered.
+  var headersLower = headers.map(function(h) { return h.toString().trim().toLowerCase(); });
+  var remarkColIdx  = headersLower.findIndex(function(h) { return h.indexOf('remark') !== -1; });
+  var historyColIdx = headersLower.findIndex(function(h) { return h.indexOf('clinical history') !== -1; });
+  if (remarkColIdx !== -1 && historyColIdx !== -1) {
+    mergedRanges.forEach(function(mr) {
+      var r0 = mr.getRow() - 1, c0 = mr.getColumn() - 1;
+      var rN = r0 + mr.getNumRows(), cN = c0 + mr.getNumColumns();
+      if (r0 === 0 || mr.getNumRows() < 2) return;
+      if (c0 > remarkColIdx || cN <= remarkColIdx) return;
+      var sharedHistory = '';
+      for (var r = r0; r < rN; r++) {
+        var h = data[r][historyColIdx];
+        if (h && h.toString().trim() !== '') { sharedHistory = h; break; }
+      }
+      if (sharedHistory) {
+        for (var r = r0; r < rN; r++)
+          data[r][historyColIdx] = sharedHistory;
+      }
+    });
+  }
 
   var colIndex = {};
   headers.forEach(function(h, i) {
