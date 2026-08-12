@@ -1134,25 +1134,39 @@ async function loadData(forceRefresh = false, silent = false) {
 
 async function fetchFromSyncSource() {
     if (SYNC_URL.includes('script.google.com')) {
-        const controller = new AbortController();
-        const SYNC_TIMEOUT_MS = 55000; // Apps Script cold starts + full-sheet reads can take a while
-        const timeout = setTimeout(() => controller.abort(), SYNC_TIMEOUT_MS);
-        try {
-            const response = await fetch(SYNC_URL, { signal: controller.signal });
-            clearTimeout(timeout);
-            if (!response.ok) throw new Error(`Apps Script returned HTTP ${response.status}`);
-            const text = await response.text();
+        // Apps Script's exec URL 302s to a signed script.googleusercontent.com URL, and
+        // that redirect intermittently 404s on a cold container even though the script
+        // itself is healthy — an immediate retry reliably succeeds, so retry a couple
+        // of times before surfacing an error to the user.
+        const MAX_ATTEMPTS = 3;
+        let lastError;
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            const controller = new AbortController();
+            const SYNC_TIMEOUT_MS = 55000; // Apps Script cold starts + full-sheet reads can take a while
+            const timeout = setTimeout(() => controller.abort(), SYNC_TIMEOUT_MS);
             try {
-                return JSON.parse(text);
+                const response = await fetch(SYNC_URL, { signal: controller.signal, cache: 'no-store' });
+                clearTimeout(timeout);
+                if (!response.ok) throw new Error(`Apps Script returned HTTP ${response.status}`);
+                const text = await response.text();
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error('Non-JSON response from Apps Script:', text.substring(0, 300));
+                    throw new Error('Apps Script returned non-JSON — check deployment access settings');
+                }
             } catch (e) {
-                console.error('Non-JSON response from Apps Script:', text.substring(0, 300));
-                throw new Error('Apps Script returned non-JSON — check deployment access settings');
+                clearTimeout(timeout);
+                lastError = e.name === 'AbortError'
+                    ? new Error(`Sync timed out after ${SYNC_TIMEOUT_MS / 1000}s — Apps Script may be slow`)
+                    : e;
+                if (attempt < MAX_ATTEMPTS) {
+                    console.warn(`Sync attempt ${attempt} failed (${lastError.message}), retrying…`);
+                    await new Promise(r => setTimeout(r, 800 * attempt));
+                }
             }
-        } catch (e) {
-            clearTimeout(timeout);
-            if (e.name === 'AbortError') throw new Error(`Sync timed out after ${SYNC_TIMEOUT_MS / 1000}s — Apps Script may be slow`);
-            throw e;
         }
+        throw lastError;
     } else {
         return new Promise((resolve, reject) => {
             Papa.parse(SYNC_URL, {
