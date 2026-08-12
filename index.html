@@ -1341,7 +1341,12 @@ function normalizeData(data, secondaryLookup = {}) {
             return '-';
         };
 
-        const receivedDateRaw = getVal(['Received Date', 'RECEIVED DATE', 'Recieved date', 'Recieved Date', 'Date Received', 'DATE']);
+        let receivedDateRaw = getVal(['Received Date', 'RECEIVED DATE', 'Recieved date', 'Recieved Date', 'Date Received', 'DATE', 'Received']);
+        // Some month tabs have a blank header for the received-date column (a sheet
+        // formatting slip) — fall back to that unnamed column if it holds a value.
+        if ((!receivedDateRaw || receivedDateRaw === '-') && row[''] && row[''].toString().trim() !== '') {
+            receivedDateRaw = row[''];
+        }
         let receivedDate = receivedDateRaw;
 
         // If it's an ISO string (from Excel/Google), format it to DD-MM-YYYY for display
